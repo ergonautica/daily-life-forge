@@ -1,0 +1,3860 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Daily Life Forge</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Life Forge">
+<meta name="theme-color" content="#0f1117">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="./icon-152.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222636;
+    --surface3: #2a2f45;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #e8eaf0;
+    --text2: #9ba3bf;
+    --text3: #6b7280;
+    --accent: #6c8ef5;
+    --accent-dim: rgba(108,142,245,0.15);
+    --gold: #f5c842;
+    --gold-dim: rgba(245,200,66,0.12);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --coral: #f87171;
+    --coral-dim: rgba(248,113,113,0.12);
+    --purple: #c084fc;
+    --purple-dim: rgba(192,132,252,0.12);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.12);
+    --radius: 10px;
+    --radius-lg: 16px;
+    /* カテゴリ対応色（コア目標ベース） */
+    --cat-health:     #f97316; /* 運動    → 体力     オレンジ */
+    --cat-food:       #22c55e; /* 食事    → 健康     グリーン */
+    --cat-hygiene:    #22c55e; /* 衛生    → 健康     グリーン */
+    --cat-rest:       #22c55e; /* 休養    → 健康     グリーン */
+    --cat-mind:       #6c8ef5; /* 学習    → 成長     ブルー */
+    --cat-creative:   #6c8ef5; /* 創作    → 成長     ブルー */
+    --cat-house:      #f5c842; /* 家事    → 生活     ゴールド */
+    --cat-positivity: #c084fc; /* マインド→ 思考     パープル */
+    --cat-energy:     #f5c842; /* エナジー            ゴールド */
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* HEADER */
+  #top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--surface);
+  }
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    padding-top: max(6px, env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+  }
+  .header-day {
+    font-size: 10px;
+    color: var(--text2);
+  }
+  .btn-day {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-day:active { opacity: 0.7; transform: scale(0.96); }
+
+  /* RESOURCES BAR */
+  .resources-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 5px 10px;
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .resources-bar::-webkit-scrollbar { display: none; }
+  .res-pill {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 3px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .res-icon { font-size: 12px; }
+  .res-val { font-size: 11px; font-weight: 700; color: var(--text); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 2px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN CONTENT */
+  .content {
+    padding: 12px;
+    padding-top: calc(var(--topbar-h, 130px) + 12px);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION HEADING */
+  .section-h {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin: 16px 0 8px;
+  }
+  .section-h:first-child { margin-top: 0; }
+
+  /* ACTION LOG — today's actions */
+  .log-target-row { margin-bottom: 8px; }
+  .log-target-toggle {
+    display: inline-flex;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 2px;
+  }
+  .log-target-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .log-target-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .log-target-btn.yesterday-active {
+    background: var(--gold);
+    color: #1a1400;
+  }
+  .action-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .action-input-row select,
+  .action-input-row input {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .action-input-row select { flex: 0 0 110px; }
+  .cat-preview {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    margin-top: -4px;
+  }
+  .cat-preview-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .btn-log {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .btn-log:active { transform: scale(0.96); opacity: 0.85; }
+
+  /* QUICK ACTION CHIPS */
+  .quick-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .chip:active { transform: scale(0.95); background: var(--surface3); }
+  .chip-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+  .chip-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .chip-rewards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .chip-reward {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .chip-freq-badge {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 6px;
+    margin-left: auto;
+  }
+  .chip-freq-badge.boost { background: var(--gold-dim); color: var(--gold); }
+  .chip-freq-badge.down { background: var(--surface3); color: var(--text3); }
+  .chip-icon { font-size: 13px; }
+  .chip-group { margin-bottom: 10px; }
+  .chip-group-label { font-size: 10px; font-weight: 700; margin-bottom: 5px; letter-spacing: 0.5px; }
+  .chip-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+
+  /* ENERGY CONVERSION */
+  .energy-conv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .energy-conv-card {
+    background: var(--surface2);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .energy-conv-card:active { transform: scale(0.96); }
+  .energy-conv-card.disabled { opacity: 0.4; cursor: not-allowed; }
+  .energy-conv-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .energy-conv-name { font-size: 12px; font-weight: 600; }
+  .energy-conv-cost { font-size: 11px; color: var(--gold); font-weight: 700; margin-bottom: 4px; }
+  .energy-conv-gain { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  /* ACTION LOG LIST */
+  .log-list { display: flex; flex-direction: column; gap: 6px; }
+  .log-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .log-item-left { display: flex; align-items: center; gap: 8px; }
+  .log-item-icon { font-size: 16px; }
+  .log-item-name { font-size: 13px; font-weight: 500; }
+  .log-item-cat { font-size: 10px; color: var(--text3); }
+  .log-item-reward {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .reward-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .log-del {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+    transition: all 0.1s;
+  }
+  .log-del:active { background: var(--coral-dim); color: var(--coral); transform: scale(0.9); }
+
+  /* BUILDINGS */
+  .building-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .building-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .building-card:not(.locked):not(.maxed):hover {
+    border-color: var(--border2);
+    background: var(--surface3);
+  }
+  .building-card:not(.locked):not(.maxed):active { transform: scale(0.97); }
+  .building-card.locked { opacity: 0.45; cursor: not-allowed; }
+  .building-card.maxed { border-color: var(--gold); }
+  .building-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .building-desc {
+    font-size: 10px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .building-level {
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .building-cost {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-bottom: 8px;
+  }
+  .cost-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .btn-build {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-build:disabled {
+    background: var(--surface3);
+    color: var(--text3);
+    cursor: not-allowed;
+  }
+  .btn-build.maxed-btn {
+    background: var(--gold-dim);
+    color: var(--gold);
+    cursor: default;
+  }
+  .building-effect {
+    font-size: 9px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+
+  /* RESEARCH */
+  .research-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+  .research-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .research-card.done {
+    border-color: var(--green);
+    opacity: 0.7;
+    cursor: default;
+  }
+  .research-card.locked { opacity: 0.4; cursor: not-allowed; }
+  .research-card:not(.done):not(.locked):hover { border-color: var(--border2); }
+  .research-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .research-desc { font-size: 10px; color: var(--text2); line-height: 1.4; margin-bottom: 8px; }
+  .research-effect { font-size: 10px; color: var(--purple); margin-bottom: 6px; }
+  .btn-research {
+    width: 100%;
+    background: var(--purple-dim);
+    color: var(--purple);
+    border: 1px solid var(--purple);
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-research:disabled {
+    background: var(--surface3);
+    border-color: transparent;
+    color: var(--text3);
+    cursor: not-allowed;
+  }
+  .btn-research.done-btn {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+    cursor: default;
+  }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-icon { font-size: 18px; flex-shrink: 0; }
+  .stat-val { font-size: 15px; font-weight: 700; line-height: 1.2; }
+  .stat-label { font-size: 9px; color: var(--text3); line-height: 1.2; }
+
+  /* ACHIEVEMENT */
+  .ach-grid { display: flex; flex-direction: column; gap: 6px; }
+  .ach-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ach-item.unlocked { border-color: var(--gold); }
+  .ach-icon { font-size: 20px; filter: grayscale(1) opacity(0.4); }
+  .ach-item.unlocked .ach-icon { filter: none; }
+  .ach-name { font-size: 13px; font-weight: 600; }
+  .ach-desc { font-size: 10px; color: var(--text2); }
+  .ach-item.unlocked .ach-name { color: var(--gold); }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    animation: toastIn 0.25s ease, toastOut 0.3s ease 2.2s forwards;
+    pointer-events: none;
+    max-width: 260px;
+  }
+  .toast.good { border-color: var(--green); color: var(--green); }
+  .toast.gold { border-color: var(--gold); color: var(--gold); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* LEVEL UP FLASH */
+  .levelup {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none;
+    animation: levelupFade 1.5s ease forwards;
+  }
+  .levelup-inner {
+    background: var(--surface3);
+    border: 2px solid var(--gold);
+    border-radius: var(--radius-lg);
+    padding: 24px 40px;
+    text-align: center;
+  }
+  .levelup-title { font-size: 24px; font-weight: 800; color: var(--gold); }
+  .levelup-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  @keyframes levelupFade {
+    0% { opacity: 0; transform: scale(0.8); }
+    20% { opacity: 1; transform: scale(1.05); }
+    40% { transform: scale(1); }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* HISTORY TABLE */
+  .history-day {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .history-day-header {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .history-day-title { font-size: 12px; font-weight: 600; }
+  .history-day-body { padding: 8px 12px; }
+  .history-action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-action-row:last-child { border-bottom: none; }
+
+  @media (min-width: 600px) {
+    .building-grid { grid-template-columns: repeat(3, 1fr); }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+  }
+  .modal-sheet {
+    background: var(--surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 20px 16px 40px; width: 100%; max-width: 600px;
+    border-top: 1px solid var(--border2);
+  }
+  .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .modal-btn {
+    display: block; width: 100%; background: var(--surface2);
+    border: 1px solid var(--border2); color: var(--text);
+    border-radius: var(--radius); padding: 12px; font-size: 14px;
+    cursor: pointer; margin-bottom: 8px; text-align: left; transition: 0.15s;
+  }
+  .modal-btn:active { transform: scale(0.98); }
+  .modal-btn.danger { color: var(--coral); border-color: var(--coral); }
+  .qa-manage-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+  .qa-manage-icon { font-size: 18px; flex-shrink: 0; }
+  .qa-manage-info { flex: 1; min-width: 0; }
+  .qa-manage-label { font-size: 13px; font-weight: 600; }
+  .qa-manage-cat { font-size: 10px; color: var(--text3); }
+  .qa-manage-btn {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    border-radius: 8px;
+    width: 30px; height: 30px;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .qa-manage-btn.danger { color: var(--coral); border-color: var(--coral-dim); }
+  .qa-form-row { margin-bottom: 10px; }
+  .qa-form-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; display: block; }
+  .qa-form-row input[type="text"], .qa-form-row select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .qa-reward-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .qa-reward-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 4px 6px;
+  }
+  .qa-reward-input input {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  /* LONG-TERM GOALS */
+  .lt-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+  .lt-calendar-weekdays div {
+    text-align: center;
+    font-size: 9px;
+    color: var(--text3);
+  }
+  .lt-calendar-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+  .lt-calendar-cell {
+    aspect-ratio: 1.8;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--text3);
+    position: relative;
+  }
+  .lt-calendar-cell.future { opacity: 0.3; }
+  .lt-calendar-cell.today { border-color: var(--accent); border-width: 2px; }
+  .lt-calendar-cell.has-progress { background: var(--green-dim); border-color: var(--green); }
+  .lt-calendar-cell.has-progress .lt-cell-date { color: var(--green); font-weight: 700; }
+  .lt-cell-mark { font-size: 9px; line-height: 1; }
+  .lt-goal-card {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .lt-goal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .lt-goal-icon { font-size: 18px; flex-shrink: 0; }
+  .lt-goal-title { flex: 1; font-size: 13px; font-weight: 700; min-width: 0; }
+  .lt-goal-progress-bar-wrap {
+    background: var(--surface3);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .lt-goal-progress-bar {
+    height: 10px;
+    border-radius: 6px;
+    transition: width 0.4s;
+  }
+  .lt-goal-progress-text { font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+  .lt-goal-milestones {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .lt-milestone-chip {
+    text-align: center;
+    font-size: 9px;
+    padding: 3px 0;
+    border-radius: 6px;
+    background: var(--surface3);
+    color: var(--text3);
+  }
+  .lt-milestone-chip.reached { background: var(--gold-dim); color: var(--gold); font-weight: 700; }
+  .lt-goal-done-badge {
+    font-size: 10px;
+    color: var(--green);
+    background: var(--green-dim);
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .onboarding-hint-box {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .tutorial-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .tutorial-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .tutorial-body { font-size: 13px; color: var(--text2); line-height: 1.8; margin-bottom: 18px; text-align: left; }
+  .tutorial-action-btn {
+    display: block;
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tutorial-action-btn:active { transform: scale(0.97); opacity: 0.9; }
+  .tutorial-action-reward { font-size: 11px; color: var(--text2); margin-top: 8px; }
+  .daily-goal-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--surface2));
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .daily-goal-card.done { opacity: 0.6; border-color: var(--border2); background: var(--surface2); }
+  .daily-goal-icon { font-size: 22px; flex-shrink: 0; }
+  .daily-goal-text { flex: 1; min-width: 0; }
+  .daily-goal-name { font-size: 12px; font-weight: 700; color: var(--gold); }
+  .daily-goal-card.done .daily-goal-name { color: var(--text2); }
+  .daily-goal-desc { font-size: 10px; color: var(--text2); margin-top: 1px; }
+  .daily-goal-bonus { font-size: 11px; font-weight: 600; color: var(--gold); flex-shrink: 0; white-space: nowrap; }
+  .streak-bar { display: flex; gap: 4px; flex-wrap: nowrap; margin-bottom: 10px; }
+  .streak-item {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 4px 2px; flex: 1; min-width: 0;
+  }
+  .streak-item.active { border-color: var(--gold); background: var(--gold-dim); }
+  .streak-icon { font-size: 15px; }
+  .streak-cnt { font-size: 10px; color: var(--text2); font-weight: 600; }
+  .streak-name { font-size: 7.5px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .xp-bar-wrap { background: var(--surface2); border-radius: 4px; height: 5px; margin-top: 4px; overflow: hidden; }
+  .xp-bar-fill { height: 5px; border-radius: 4px; background: var(--gold); transition: width 0.4s; }
+  .combo-flash {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 36px; font-weight: 900; color: var(--gold);
+    pointer-events: none; z-index: 500;
+    animation: comboAnim 1s ease forwards;
+  }
+  @keyframes comboAnim {
+    0%   { opacity:0; transform:translate(-50%,-50%) scale(0.5); }
+    30%  { opacity:1; transform:translate(-50%,-50%) scale(1.2); }
+    60%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    100% { opacity:0; transform:translate(-50%,-60%) scale(0.9); }
+  }
+  .res-detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .res-detail-row:last-child { border-bottom: none; }
+  .res-mini-bar-wrap { width: 80px; height: 5px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+  .res-mini-bar { height: 5px; border-radius: 2px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+<div class="header">
+  <div>
+    <div class="header-title"><svg width="18" height="19" viewBox="-24 -27 48 51" style="vertical-align:-3px;margin-right:3px" aria-hidden="true"><line x1="9" y1="-8" x2="19" y2="-17" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><circle cx="19" cy="-17" r="1.3" fill="#f5c842"/><line x1="-8" y1="-9" x2="-18" y2="-15" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><circle cx="-18" cy="-15" r="1.3" fill="#f5c842"/><line x1="2" y1="-13" x2="4" y2="-25" stroke="#f5c842" stroke-width="1.5" stroke-linecap="round"/><circle cx="4" cy="-25" r="1.3" fill="#f5c842"/><line x1="5" y1="-10" x2="11" y2="-20" stroke="#f5c842" stroke-width="1.2" stroke-linecap="round"/><circle cx="11" cy="-20" r="1.1" fill="#f5c842"/><line x1="-4" y1="-11" x2="-9" y2="-22" stroke="#f5c842" stroke-width="1.2" stroke-linecap="round"/><circle cx="-9" cy="-22" r="1.1" fill="#f5c842"/><line x1="11" y1="-4" x2="20" y2="-5" stroke="#f5c842" stroke-width="1.2" stroke-linecap="round"/><circle cx="20" cy="-5" r="1.1" fill="#f5c842"/><line x1="-11" y1="-3" x2="-20" y2="-3" stroke="#f5c842" stroke-width="1.2" stroke-linecap="round"/><circle cx="-20" cy="-3" r="1.1" fill="#f5c842"/><line x1="-22" y1="6" x2="22" y2="6" stroke="#2a2f45" stroke-width="1"/><path d="M-11,6 A11,11 0 0 1 11,6 Z" fill="#6c8ef5"/><g transform="translate(0,10) scale(0.65)"><polygon points="-31,0 -18,-16 21,-16 21,-5 12,-3 12,8 20,8 20,18 -20,18 -20,8 -12,8 -12,-3 -18,-5" fill="#f5c842" stroke="#1f2330" stroke-width="2"/></g></svg>Daily Life Forge</div>
+    <div class="header-day" id="header-day-display">Day 1</div>
+  </div>
+</div>
+
+<div class="resources-bar" id="resources-bar"></div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('actions', this)">📋行動</div>
+  <div class="tab" id="tab-buildings" onclick="switchTab('buildings', this)" style="display:none">🔧道具</div>
+  <div class="tab" id="tab-research" onclick="switchTab('research', this)" style="display:none">🔬研究</div>
+  <div class="tab" id="tab-longterm" onclick="switchTab('longterm', this)" style="display:none">🗺️長期</div>
+  <div class="tab" id="tab-resources" onclick="switchTab('resources', this)">💎資源</div>
+  <div class="tab" id="tab-stats" onclick="switchTab('stats', this)">📊統計</div>
+  <div class="tab" id="tab-history" onclick="switchTab('history', this)">📅履歴</div>
+  <div class="tab" onclick="switchTab('settings', this)">⚙設定</div>
+</div>
+</div>
+
+<div class="content">
+
+  <!-- ACTIONS PANEL -->
+  <div class="panel active" id="panel-actions">
+    <div id="tutorial-screen" style="display:none"></div>
+
+    <div id="normal-actions-content">
+      <div id="onboarding-hint" style="display:none"></div>
+      <div id="daily-goal-card"></div>
+      <div class="section-h">今日の達成カテゴリ</div>
+      <div class="streak-bar" id="cat-streak-bar"></div>
+      <div class="log-target-row" id="log-target-row" style="display:none">
+        <div class="log-target-toggle">
+          <button class="log-target-btn active" id="btn-target-today" onclick="setLogTarget('today')">今日</button>
+          <button class="log-target-btn" id="btn-target-yesterday" onclick="setLogTarget('yesterday')">昨日</button>
+        </div>
+      </div>
+      <div class="section-h" id="record-section-heading">今日の行動を記録</div>
+      <div class="action-input-row">
+        <select id="action-cat" onchange="updateCatPreview()">
+          <option value="health">🏃 運動</option>
+          <option value="hygiene">🧼 衛生</option>
+          <option value="food">🍳 食事</option>
+          <option value="house">🏠 家事</option>
+          <option value="mind">📚 学習</option>
+          <option value="rest">😴 休養</option>
+          <option value="creative">🎨 創作</option>
+          <option value="positivity">😊 マインド</option>
+        </select>
+        <input type="text" id="action-input" placeholder="例: 30分ジョギング" maxlength="40" />
+        <button class="btn-log" onclick="logAction()">記録</button>
+      </div>
+      <div id="cat-preview" class="cat-preview"></div>
+
+      <div class="section-h">クイック記録</div>
+      <div class="quick-chips" id="quick-chips"></div>
+
+      <div id="energy-conv-section" style="display:none">
+        <div class="section-h">⚡ エナジーを使う</div>
+        <div class="energy-conv-grid" id="energy-conv-grid"></div>
+      </div>
+
+      <div class="section-h">今日の記録 (<span id="log-count">0</span>)</div>
+      <div class="log-list" id="log-list">
+        <div style="color: var(--text3); font-size: 12px; padding: 12px; text-align: center;">まだ記録がありません。<br>行動を記録して資源を集めましょう！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUILDINGS PANEL -->
+  <div class="panel" id="panel-buildings">
+    <div class="section-h">道具を揃える</div>
+    <div class="building-grid" id="building-grid"></div>
+  </div>
+
+  <!-- RESEARCH PANEL -->
+  <div class="panel" id="panel-research">
+    <div class="section-h">生活の知恵を習得</div>
+    <div class="research-grid" id="research-grid"></div>
+  </div>
+
+  <!-- LONG-TERM GOALS PANEL -->
+  <div class="panel" id="panel-longterm">
+    <div class="section-h">取り組みカレンダー</div>
+    <div id="longterm-calendar"></div>
+    <div class="section-h" style="margin-top:16px">長期目標</div>
+    <div id="longterm-goals-list"></div>
+    <button class="modal-btn primary" onclick="openLongTermGoalEditor(null)">＋ 新しい目標を追加</button>
+  </div>
+
+  <!-- STATS PANEL -->
+  <div class="panel" id="panel-stats">
+    <div class="section-h">ステータス</div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="section-h">実績</div>
+    <div class="ach-grid" id="ach-grid"></div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div class="panel" id="panel-history">
+    <div class="section-h">行動履歴</div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- RESOURCES PANEL -->
+  <div class="panel" id="panel-resources">
+    <div class="section-h">資源の状況</div>
+    <div id="resources-detail"></div>
+    <div class="section-h" style="margin-top:16px">今日の収支予測</div>
+    <div id="resources-forecast"></div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+    <div class="section-h">クイック記録</div>
+    <button class="modal-btn" onclick="openQuickActionListModal()" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span>✎ 達成項目の編集</span>
+      <span style="color:var(--text3);font-size:11px">クイック記録の追加・編集・削除 ›</span>
+    </button>
+
+    <div class="section-h">表示設定</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:600">習得済みの研究を非表示</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">完了した研究を研究タブから隠す</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <span id="hide-done-label" style="font-size:11px;color:var(--accent)">ON</span>
+          <div id="hide-done-toggle" onclick="handleHideDoneToggle()" style="width:44px;height:24px;border-radius:12px;background:var(--accent-dim);border:1px solid var(--accent);cursor:pointer;position:relative;transition:background 0.2s">
+            <div id="hide-done-knob" style="position:absolute;top:3px;left:23px;width:16px;height:16px;border-radius:50%;background:var(--accent);transition:all 0.2s"></div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="section-h">管理者設定</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:600">管理者モード</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">未発見の道具・研究を含む全項目を表示</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <span id="admin-mode-label" style="font-size:11px;color:var(--text3)">OFF</span>
+          <div id="admin-toggle" onclick="handleAdminToggle()" style="width:44px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s">
+            <div id="admin-knob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:all 0.2s"></div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div id="iron-will-settings" style="display:none">
+      <div class="section-h">鉄の意志</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600">⚔️ 鉄の意志モード</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">自動収入系の道具・研究を道具/研究タブから隠す</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span id="iron-will-label" style="font-size:11px;color:var(--text3)">OFF</span>
+            <div id="iron-will-toggle" onclick="handleIronWillToggle()" style="width:44px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s">
+              <div id="iron-will-knob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:all 0.2s"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="section-h" style="margin-top:16px">データ管理</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="modal-btn" onclick="exportData()">📤 データをエクスポート（JSONコピー）</button>
+      <button class="modal-btn" onclick="importData()">📥 データをインポート</button>
+      <button class="modal-btn danger" onclick="confirmReset()">🗑 ゲームをリセット</button>
+    </div>
+    <div class="section-h" style="margin-top:16px">iPhoneホーム画面への追加</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;color:var(--text2);line-height:1.8">
+      1. Safariでこのファイルを開く<br>
+      2. 画面下の「共有」ボタン（□↑）をタップ<br>
+      3.「ホーム画面に追加」を選択<br>
+      4. 名前を確認して「追加」をタップ<br>
+      <br>
+      ✓ オフラインで動作します<br>
+      ✓ データはこの端末に保存されます
+    </div>
+    <div class="section-h" style="margin-top:16px">ゲームについて</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;color:var(--text2);line-height:1.8">
+      <strong style="color:var(--text)">Daily Life Forge</strong><br>
+      海外の名作放置ゲーム「Kittens Game」へのオマージュとして作られた、行動記録型の生活シミュレーションです。<br>
+      <br>
+      最大の違いは、何もしなくても勝手に資源が増えていく本家のような仕組みではないこと。運動・食事・家事・学習・休養・マインドなど、実際に行動した分だけ資源が育ちます（一部の道具・研究で、ごく少量の自動収入を得られる場合もあります）。<br>
+      <br>
+      貯めた資源で道具を揃え、研究を進めながら、日々の暮らしを少しずつ鍛えていく——そんなゲームです。
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<div id="qa-editor-root"></div>
+
+<script>
+// ============================================================
+// GAME DATA DEFINITIONS
+// ============================================================
+
+const RESOURCES = {
+  vitality: { name: '体力',     icon: '💪', color: '#f97316' },
+  wellness: { name: '健康',     icon: '🌿', color: '#22c55e' },
+  growth:   { name: '成長',     icon: '📖', color: '#6c8ef5' },
+  mindset:  { name: '思考',     icon: '💭', color: '#c084fc' },
+  life:     { name: '生活',     icon: '🏠', color: '#f5c842' },
+  energy:   { name: 'エナジー', icon: '⚡', color: '#f5c842' },
+};
+
+const ACTION_REWARDS = {
+  health:  { vitality: 3, wellness: 1, energy: 1 },
+  food:    { wellness: 3, vitality: 1, energy: 1 },
+  hygiene: { wellness: 2, energy: 1 },
+  rest:    { wellness: 2, energy: 3 },
+  house:   { life: 3, wellness: 1 },
+  mind:    { growth: 3, mindset: 1 },
+  creative:{ growth: 2, mindset: 2 },
+  positivity: { mindset: 2, wellness: 1 },
+};
+
+const CATEGORY_INFO = {
+  health:     { icon: '🏃', label: '運動',    primaryRes: 'vitality' },
+  hygiene:    { icon: '🧼', label: '衛生',    primaryRes: 'wellness' },
+  food:       { icon: '🍳', label: '食事',    primaryRes: 'wellness' },
+  house:      { icon: '🏠', label: '家事',    primaryRes: 'life' },
+  mind:       { icon: '📚', label: '学習',    primaryRes: 'growth' },
+  rest:       { icon: '😴', label: '休養',    primaryRes: 'wellness' },
+  creative:   { icon: '🎨', label: '創作',    primaryRes: 'growth' },
+  positivity: { icon: '😊', label: 'マインド', primaryRes: 'mindset' },
+};
+
+// デイリー達成目標（曜日固定ローテーション、Date.getDay()の0=日〜6=土に対応）
+// 達成しやすい代わりに、通常のクイック記録よりやや良いボーナスを用意
+const DAILY_GOALS = [
+  { day: 0, name: 'のんびり日曜日', desc: '休養を1回記録しよう',   cat: 'rest',       icon: '😴', bonus: { wellness: 6, energy: 6 } },
+  { day: 1, name: 'ポジティブ月曜日', desc: 'マインドを1回記録しよう', cat: 'positivity', icon: '😊', bonus: { mindset: 8, wellness: 3 } },
+  { day: 2, name: '台所の火曜日',   desc: '食事を1回記録しよう',   cat: 'food',       icon: '🍳', bonus: { wellness: 8, life: 3 } },
+  { day: 3, name: '学びの水曜日',   desc: '学習を1回記録しよう',   cat: 'mind',       icon: '📚', bonus: { growth: 8, mindset: 3 } },
+  { day: 4, name: '身だしなみ木曜日', desc: '衛生を1回記録しよう', cat: 'hygiene',    icon: '🧼', bonus: { wellness: 6, energy: 4 } },
+  { day: 5, name: '暮らしの金曜日', desc: '家事を1回記録しよう',   cat: 'house',      icon: '🏠', bonus: { life: 8, wellness: 3 } },
+  { day: 6, name: 'やる気の土曜日', desc: '運動を1回記録しよう',   cat: 'health',     icon: '🏃', bonus: { vitality: 8, energy: 3 } },
+];
+
+function getTodayGoal() {
+  const dow = new Date().getDay();
+  return DAILY_GOALS.find(g => g.day === dow);
+}
+
+// 初期シード値（G.quickActionsが無い場合にIDを付与して複製される）
+const DEFAULT_QUICK_ACTIONS = [
+  // 体力メイン
+  { cat: 'health',     label: '30分散歩/筋トレ',   icon: '🚶', primaryRes: 'vitality', customRewards: { vitality: 3, wellness: 1, energy: 1 } },
+  { cat: 'health',     label: 'ランニング30分',     icon: '🏃', primaryRes: 'vitality', customRewards: { vitality: 8, wellness: 1, energy: 1 } },
+  { cat: 'health',     label: 'クロール250m',       icon: '🏊', primaryRes: 'vitality', customRewards: { vitality: 3, wellness: 1, energy: 1 } },
+  // 健康メイン
+  { cat: 'food',       label: '腹八分目',           icon: '🍽️', primaryRes: 'wellness', customRewards: { wellness: 2, vitality: 1, energy: 1 } },
+  { cat: 'hygiene',    label: '歯磨き',             icon: '🪥', primaryRes: 'wellness', customRewards: { wellness: 2, energy: 1 } },
+  { cat: 'rest',       label: '6時間以上睡眠',      icon: '😴', primaryRes: 'wellness', customRewards: { wellness: 2, energy: 3, vitality: 1 } },
+  // 生活メイン
+  { cat: 'house',      label: '料理した',           icon: '🍳', primaryRes: 'life', customRewards: { life: 3, wellness: 1, energy: 1 } },
+  { cat: 'house',      label: '掃除/洗濯',          icon: '🧹', primaryRes: 'life', customRewards: { life: 3, wellness: 1, energy: 1 } },
+  { cat: 'house',      label: '食洗機',             icon: '🍽️', primaryRes: 'life', customRewards: { life: 2, energy: 1 } },
+  // 成長メイン
+  { cat: 'mind',       label: '読書30分',           icon: '📕', primaryRes: 'growth', customRewards: { growth: 3, mindset: 1, energy: 1 } },
+  { cat: 'mind',       label: '学習・勉強',         icon: '✏️', primaryRes: 'growth', customRewards: { growth: 3, mindset: 1, energy: 1 } },
+  { cat: 'creative',   label: '未来への投資30分',   icon: '🎸', primaryRes: 'growth', customRewards: { growth: 2, mindset: 2, energy: 1 } },
+  // 思考メイン
+  { cat: 'positivity', label: 'ポジティブ',         icon: '😊', primaryRes: 'mindset', customRewards: { mindset: 1, wellness: 1, energy: 1 } },
+  { cat: 'positivity', label: '感謝を伝える',       icon: '🙏', primaryRes: 'mindset', customRewards: { mindset: 2, wellness: 1, energy: 1 } },
+];
+
+// DEFAULT_QUICK_ACTIONSにIDを付与してG.quickActionsの初期値を作る
+function seedQuickActions() {
+  return DEFAULT_QUICK_ACTIONS.map((a, i) => ({ id: `qa_${i + 1}`, ...a }));
+}
+
+// エナジーを消費して他資源に変換するメニュー
+const ENERGY_CONVERSIONS = [
+  { id: 'refresh_vitality', name: 'リフレッシュ運動', icon: '💪', desc: 'エナジー10で体力+5に変換',   cost: 10, gain: { vitality: 5 } },
+  { id: 'refresh_wellness', name: 'リラックスタイム', icon: '🌿', desc: 'エナジー10で健康+5に変換',   cost: 10, gain: { wellness: 5 } },
+  { id: 'refresh_growth',   name: '振り返りタイム',   icon: '📖', desc: 'エナジー10で成長+5に変換',   cost: 10, gain: { growth: 5 } },
+  { id: 'refresh_mindset',  name: '集中タイム',       icon: '💭', desc: 'エナジー10で思考+5に変換',   cost: 10, gain: { mindset: 5 } },
+  { id: 'refresh_life',     name: '生活見直しタイム', icon: '🏠', desc: 'エナジー10で生活+5に変換',   cost: 10, gain: { life: 5 } },
+  { id: 'refresh_all',      name: '充実した一日',     icon: '✨', desc: 'まとめて少しずつ全資源に変換', cost: 25, gain: { vitality: 2, wellness: 2, growth: 2, mindset: 2, life: 2 } },
+];
+
+// ============================================================
+// TOOLS (旧BUILDINGS：「道具を揃える」) 
+// ============================================================
+// unlockRequires: { buildings:[], research:[] } で解放条件を定義
+// effect: カテゴリ報酬倍率ボーナス
+// passiveBonus: 毎日自動取得
+// capBonus: 資源上限拡張
+// unlocksResearch: この道具を入手すると解放される研究ID[]
+// ============================================================
+
+const BUILDINGS = [
+  // ─── 身体系 ───────────────────────────────
+  {
+    id: 'yoga_mat', name: 'ヨガマット', icon: '🧘',
+    desc: '運動で得られる体力+20%/Lv',
+    flavor: '始めることが全ての始まり。',
+    effect: cat => cat === 'health',
+    unlockRequires: { buildings: [], research: [] },
+    baseCost: { vitality: 5, energy: 5 },
+    costScale: 1.8,
+    unlocksResearch: ['stretch_habit'],
+  },
+  {
+    id: 'running_shoes', name: 'ランニングシューズ', icon: '👟',
+    desc: '有酸素運動の体力報酬+30%/Lv',
+    flavor: '走りたくなる靴がある。',
+    effect: cat => cat === 'health',
+    unlockRequires: { buildings: [], research: ['stretch_habit'] },
+    baseCost: { vitality: 15, energy: 10 },
+    costScale: 1.9,
+    unlocksResearch: ['aerobic_basics'],
+  },
+  {
+    id: 'protein_shaker', name: 'プロテインシェイカー', icon: '🥤',
+    desc: '毎日体力+2/Lv',
+    flavor: '飲んだだけで強くなった気がする。',
+    passiveBonus: lv => ({ vitality: lv * 2 }),
+    unlockRequires: { buildings: ['running_shoes'], research: ['aerobic_basics'] },
+    baseCost: { vitality: 25, wellness: 10 },
+    costScale: 2.0,
+    unlocksResearch: ['nutrition_recovery'],
+  },
+  // ─── 台所系 ───────────────────────────────
+  {
+    id: 'good_knife', name: '良い包丁', icon: '🔪',
+    desc: '家事（料理）で得られる生活+20%/Lv',
+    flavor: 'いい包丁は料理が楽しくなる。気がする。',
+    effect: cat => cat === 'house',
+    unlockRequires: { buildings: [], research: [] },
+    baseCost: { life: 5, energy: 5 },
+    costScale: 1.8,
+    unlocksResearch: ['ingredient_eye'],
+  },
+  {
+    id: 'big_pot', name: '大鍋', icon: '🫕',
+    desc: '毎日生活+2/Lv（作り置きの余裕）',
+    flavor: 'カレーは二日目の方が美味い。',
+    passiveBonus: lv => ({ life: lv * 2 }),
+    unlockRequires: { buildings: ['good_knife'], research: ['recipe_repertoire'] },
+    baseCost: { life: 20, wellness: 10 },
+    costScale: 2.0,
+    unlocksResearch: ['food_body_link'],
+  },
+  {
+    id: 'electric_kettle', name: '電気ケトル', icon: '♨️',
+    desc: '毎日エナジー+2/Lv（上限なし）',
+    flavor: 'お湯が沸く3分が、地味に貴重な休憩になる。',
+    passiveBonus: lv => ({ energy: lv * 2 }),
+    unlockRequires: { buildings: ['good_knife'], research: [] },
+    baseCost: { life: 10, energy: 8 },
+    costScale: 1.8,
+    unlocksResearch: [],
+  },
+  // ─── 睡眠・休養系 ──────────────────────────
+  {
+    id: 'good_pillow', name: '低反発まくら', icon: '🛏️',
+    desc: '休養で得られる健康+20%/Lv',
+    flavor: '睡眠の質は枕で変わる、らしい。',
+    effect: cat => cat === 'rest',
+    unlockRequires: { buildings: [], research: ['sleep_log'] },
+    baseCost: { wellness: 15, energy: 10 },
+    costScale: 1.9,
+    unlocksResearch: ['sleep_routine'],
+  },
+  {
+    id: 'eye_mask', name: 'アイマスク', icon: '😴',
+    desc: '毎日健康+2、エナジー+1/Lv',
+    flavor: '光を遮ると、眠りが深くなる。',
+    passiveBonus: lv => ({ wellness: lv * 2, energy: lv }),
+    unlockRequires: { buildings: ['good_pillow'], research: ['sleep_routine'] },
+    baseCost: { wellness: 25, energy: 15 },
+    costScale: 2.0,
+    unlocksResearch: ['mindfulness'],
+  },
+  // ─── 学習・思考系 ──────────────────────────
+  {
+    id: 'notebook', name: '万年筆', icon: '🖋️',
+    desc: '学習で得られる成長+20%/Lv',
+    flavor: '気分が上がると、書く気になる。',
+    effect: cat => cat === 'mind',
+    unlockRequires: { buildings: [], research: [] },
+    baseCost: { growth: 5, energy: 5 },
+    costScale: 1.7,
+    unlocksResearch: ['writing_habit'],
+  },
+  {
+    id: 'thermos', name: '保温ボトル', icon: '🧴',
+    desc: '行動で得られるエナジー報酬+15%/Lv（上限なし）',
+    flavor: '温かい飲み物が手元にあると、頑張れる気がする。',
+    energyBoost: true,
+    unlockRequires: { buildings: ['notebook'], research: [] },
+    baseCost: { growth: 8, energy: 8 },
+    costScale: 1.8,
+    unlocksResearch: [],
+  },
+  {
+    id: 'timer', name: 'タイマー', icon: '⏱️',
+    desc: '学習・創作の報酬+20%/Lv（時間を区切る）',
+    flavor: 'タイマーが鳴ると、やる気になる。なぜか。',
+    effect: cat => cat === 'mind' || cat === 'creative',
+    unlockRequires: { buildings: ['notebook'], research: ['writing_habit'] },
+    baseCost: { growth: 15, mindset: 10 },
+    costScale: 1.9,
+    unlocksResearch: ['pomodoro'],
+  },
+  {
+    id: 'whiteboard', name: '集中できる環境', icon: '🎧',
+    desc: '毎日成長+2、思考+1/Lv',
+    flavor: '環境が整うと、集中が続く。',
+    passiveBonus: lv => ({ growth: lv * 2, mindset: lv }),
+    unlockRequires: { buildings: ['timer'], research: ['pomodoro'] },
+    baseCost: { growth: 30, mindset: 20 },
+    costScale: 2.1,
+    unlocksResearch: ['flow_state'],
+  },
+  // ─── 生活・家事系 ──────────────────────────
+  {
+    id: 'storage_box', name: '壁面収納', icon: '🗄️',
+    desc: '家事で得られる生活+20%/Lv',
+    flavor: '床に置かなければ、掃除が楽になる。',
+    effect: cat => cat === 'house',
+    unlockRequires: { buildings: [], research: [] },
+    baseCost: { life: 5, energy: 5 },
+    costScale: 1.8,
+    unlocksResearch: ['declutter'],
+  },
+
+  // ─── 上限拡張系 ──────────────────────────
+  {
+    id: 'foam_roller', name: 'ダンベル', icon: '🏋️',
+    desc: '体力の上限+30/Lv',
+    flavor: '鉄は重い。でも持ち上げると、少し軽くなる。',
+    capBonus: { vitality: 30 },
+    unlockRequires: { buildings: ['protein_shaker'], research: ['nutrition_recovery'] },
+    baseCost: { vitality: 40, energy: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'air_purifier', name: 'アロマディフューザー', icon: '🕯️',
+    desc: '健康の上限+30/Lv',
+    flavor: 'いい香りは、それだけで気分が上がる。',
+    capBonus: { wellness: 30 },
+    unlockRequires: { buildings: ['good_pillow'], research: ['sleep_routine'] },
+    baseCost: { wellness: 40, energy: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'bookshelf', name: '本棚', icon: '📚',
+    desc: '成長の上限+30/Lv',
+    flavor: '本棚があると、本が増える。',
+    capBonus: { growth: 30 },
+    unlockRequires: { buildings: ['notebook'], research: ['writing_habit'] },
+    baseCost: { growth: 40, energy: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'meditation_cushion', name: '窓', icon: '🪟',
+    desc: '思考の上限+30/Lv',
+    flavor: '外が見えると、気持ちが広がる。',
+    capBonus: { mindset: 30 },
+    unlockRequires: { buildings: ['eye_mask'], research: ['mindfulness'] },
+    baseCost: { mindset: 40, energy: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'cleaning_robot', name: 'おそうじロボット', icon: '🧹',
+    desc: '生活の上限+30/Lv',
+    flavor: '勝手に掃除してくれる。えらい。',
+    capBonus: { life: 30 },
+    unlockRequires: { buildings: ['storage_box'], research: ['systematize'] },
+    baseCost: { life: 40, energy: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'power_bank', name: 'キャパ', icon: '🫙',
+    desc: 'エナジーの上限+40/Lv',
+    flavor: '器が大きいほど、入れられる量が増える。',
+    capBonus: { energy: 40 },
+    unlockRequires: { buildings: [], research: ['energy_efficiency'] },
+    baseCost: { energy: 40, life: 20 },
+    costScale: 2.2,
+    unlocksResearch: [],
+  },
+  {
+    id: 'solar_panel', name: '太陽光パネル', icon: '☀️',
+    desc: '毎日エナジー+3/Lv（上限なし）',
+    flavor: '電気代が、少しだけ浮いた。',
+    passiveBonus: (lv) => ({ energy: lv * 3 }),
+    unlockRequires: { buildings: ['power_bank'], research: ['energy_efficiency'] },
+    baseCost: { energy: 30, life: 15 },
+    costScale: 1.9,
+    unlocksResearch: ['charge_master'],
+  },
+  {
+    id: 'treat_coffee', name: '差し入れコーヒー', icon: '☕',
+    desc: '行動で得られるエナジー報酬+15%/Lv（上限なし）',
+    flavor: '一杯のコーヒーが、もうひと踏ん張りをくれる。',
+    energyBoost: true,
+    unlockRequires: { buildings: ['yoga_mat'], research: [] },
+    baseCost: { energy: 12, wellness: 8 },
+    costScale: 1.8,
+    unlocksResearch: [],
+  },
+];
+
+// ============================================================
+// RESEARCH
+// ============================================================
+// unlockRequires: { buildings:[], research:[] } で解放条件
+// unlocksBuildings: この研究完了で解放される道具ID[]
+// ============================================================
+
+const RESEARCH = [
+  // ─── 気づきの初期解放 ─────────────────────
+  {
+    id: 'daily_rhythm', name: '今週のルーティン表', icon: '📆',
+    desc: 'デイリー目標を解放',
+    flavor: '曜日ごとに、小さなお題を用意しました。',
+    unlockRequires: { buildings: [], research: [] },
+    cost: { growth: 6, mindset: 6 },
+    bonus: {},
+    unlocksBuildings: [],
+  },
+  {
+    id: 'energy_basics', name: '休憩の使い方', icon: '⚡',
+    desc: '「エナジーを使う」を解放',
+    flavor: 'エナジーは、貯めるだけじゃもったいない。',
+    unlockRequires: { buildings: [], research: [] },
+    cost: { energy: 10, wellness: 5 },
+    bonus: {},
+    unlocksBuildings: [],
+  },
+  {
+    id: 'long_term_view', name: '遠くを見る力', icon: '🗺️',
+    desc: '「長期」タブを解放。じっくり進める目標を管理できるようになる',
+    flavor: '毎日の一歩は小さくても、地図があれば迷わない。',
+    unlockRequires: { buildings: [], research: ['daily_rhythm'] },
+    cost: { growth: 15, mindset: 10 },
+    bonus: {},
+    unlocksBuildings: [],
+  },
+  {
+    id: 'micro_break', name: 'マイクロブレイク', icon: '☕',
+    desc: '衛生カテゴリのエナジー報酬+2',
+    flavor: '手を洗う30秒も、立派な休憩になる。',
+    unlockRequires: { buildings: [], research: [] },
+    cost: { wellness: 8, energy: 6 },
+    bonus: {},
+    unlocksResearch: ['energy_mindset'],
+  },
+  {
+    id: 'energy_mindset', name: '省エネ思考', icon: '🌱',
+    desc: '全カテゴリのエナジー報酬+1',
+    flavor: '無理しないことも、立派な戦略のうち。',
+    unlockRequires: { buildings: [], research: ['micro_break'] },
+    cost: { energy: 15, mindset: 10 },
+    bonus: {},
+    unlocksBuildings: [],
+  },
+  // ─── 身体系 ───────────────────────────────
+  {
+    id: 'stretch_habit', name: '朝の5分ルーティン', icon: '🤸',
+    desc: '運動カテゴリの体力報酬+2',
+    flavor: '5分だけ、と思って始めると続く。',
+    unlockRequires: { buildings: ['yoga_mat'], research: [] },
+    cost: { vitality: 8, energy: 5 },
+    bonus: { healthVitality: 2 },
+    unlocksBuildings: ['running_shoes'],
+  },
+  {
+    id: 'aerobic_basics', name: '有酸素トレーニング', icon: '❤️',
+    desc: '運動カテゴリのエナジー副次報酬+1',
+    flavor: '息が上がるくらいがちょうどいい。',
+    unlockRequires: { buildings: ['running_shoes'], research: ['stretch_habit'] },
+    cost: { vitality: 15, wellness: 8 },
+    bonus: { healthEnergy: 1 },
+    unlocksBuildings: ['protein_shaker'],
+  },
+  {
+    id: 'nutrition_recovery', name: 'BCAA＆ゴールデンタイム', icon: '🔬',
+    desc: '運動後の体力回復：毎日体力+3',
+    flavor: '運動と食事はセットで効く。',
+    unlockRequires: { buildings: ['protein_shaker'], research: ['aerobic_basics', 'food_body_link'] },
+    cost: { vitality: 25, wellness: 20 },
+    bonus: { dailyVitality: 3 },
+    unlocksBuildings: [],
+  },
+  // ─── 台所系 ───────────────────────────────
+  {
+    id: 'ingredient_eye', name: '旬のものを選ぶ', icon: '🥦',
+    desc: '家事（料理）カテゴリの健康副次報酬+1',
+    flavor: '買うものを変えると、食べるものが変わる。',
+    unlockRequires: { buildings: ['good_knife'], research: [] },
+    cost: { life: 8, wellness: 5 },
+    bonus: { houseWellness: 1 },
+    unlocksBuildings: [],
+    unlocksResearch: ['recipe_repertoire'],
+  },
+  {
+    id: 'recipe_repertoire', name: 'レシピノート', icon: '📒',
+    desc: '家事カテゴリの全報酬+1',
+    flavor: '10品のレシピがあれば、たいてい乗り切れる。',
+    unlockRequires: { buildings: [], research: ['ingredient_eye'] },
+    cost: { life: 15, growth: 8 },
+    bonus: { houseFlat: 1 },
+    unlocksBuildings: ['big_pot'],
+  },
+  {
+    id: 'food_body_link', name: '腸活はじめました', icon: '🌿',
+    desc: '食事カテゴリの全報酬+1、毎日健康+2',
+    flavor: '食べ方で、体が変わる。',
+    unlockRequires: { buildings: ['big_pot'], research: ['recipe_repertoire'] },
+    cost: { wellness: 20, growth: 15 },
+    bonus: { foodFlat: 1, dailyWellness: 2 },
+    unlocksBuildings: [],
+  },
+  // ─── 睡眠系 ───────────────────────────────
+  {
+    id: 'sleep_log', name: '睡眠スコア計測', icon: '📊',
+    desc: '休養カテゴリのエナジー報酬+1',
+    flavor: '記録すると、パターンが見えてくる。',
+    unlockRequires: { buildings: [], research: [] },
+    cost: { wellness: 5, growth: 5 },
+    bonus: { restEnergy: 1 },
+    unlocksBuildings: ['good_pillow'],
+  },
+  {
+    id: 'sleep_routine', name: '就寝前ルーティン', icon: '🌙',
+    desc: '休養後の翌日エナジー+5',
+    flavor: '寝る前のスマホは、睡眠の天敵。',
+    unlockRequires: { buildings: ['good_pillow'], research: ['sleep_log'] },
+    cost: { wellness: 15, energy: 10 },
+    bonus: { restEnergyBonus: 5 },
+    unlocksBuildings: ['eye_mask'],
+    unlocksResearch: ['nap_power'],
+  },
+  {
+    id: 'nap_power', name: '昼寝の効能', icon: '😪',
+    desc: '休養カテゴリのエナジー報酬+3',
+    flavor: '15分の昼寝は、コーヒー1杯分の元気をくれる。',
+    unlockRequires: { buildings: [], research: ['sleep_routine'] },
+    cost: { wellness: 10, energy: 15 },
+    bonus: {},
+    unlocksBuildings: [],
+  },
+  {
+    id: 'mindfulness', name: '1日1分、ぼーっとする', icon: '🧘',
+    desc: '毎日の健康+2、思考+2',
+    flavor: '何もしない時間が、案外難しい。',
+    unlockRequires: { buildings: ['eye_mask'], research: ['sleep_routine'] },
+    cost: { wellness: 25, mindset: 15 },
+    bonus: { dailyWellness: 2, dailyMindset: 2 },
+    unlocksBuildings: [],
+    unlocksResearch: ['gratitude_practice'],
+  },
+  {
+    id: 'gratitude_practice', name: '感謝の習慣', icon: '🙏',
+    desc: 'マインドカテゴリの全報酬+2、毎日思考+2',
+    flavor: '感謝を探す習慣は、意外と続く。',
+    unlockRequires: { buildings: [], research: ['mindfulness'] },
+    cost: { mindset: 25, wellness: 15 },
+    bonus: { positivityFlat: 2, dailyMindset: 2 },
+    unlocksBuildings: [],
+  },
+  // ─── 学習・思考系 ──────────────────────────
+  {
+    id: 'writing_habit', name: 'メモの魔力', icon: '✍️',
+    desc: '学習カテゴリの成長報酬+2',
+    flavor: '書くと、読んだだけより頭に残る。',
+    unlockRequires: { buildings: ['notebook'], research: [] },
+    cost: { growth: 8, mindset: 5 },
+    bonus: { mindGrowth: 2 },
+    unlocksBuildings: ['timer'],
+    unlocksResearch: ['reflection_technique'],
+  },
+  {
+    id: 'reflection_technique', name: '一日の棚卸し', icon: '🔁',
+    desc: '毎日成長+2（日々の経験を知恵に変える）',
+    flavor: '今日を振り返ると、明日が変わる。',
+    unlockRequires: { buildings: [], research: ['writing_habit'] },
+    cost: { growth: 15, mindset: 10 },
+    bonus: { dailyGrowth: 2 },
+    unlocksBuildings: [],
+  },
+  {
+    id: 'pomodoro', name: 'ポモドーロ集中術', icon: '⏰',
+    desc: '学習・創作の思考副次報酬+2',
+    flavor: 'タイマーをかけると、なぜか集中できる。',
+    unlockRequires: { buildings: ['timer'], research: ['writing_habit'] },
+    cost: { mindset: 15, growth: 10 },
+    bonus: { mindMindset: 2 },
+    unlocksBuildings: ['whiteboard'],
+  },
+  {
+    id: 'flow_state', name: 'ゾーンに入る技術', icon: '🌊',
+    desc: '創作カテゴリの全報酬+2、毎日思考+1',
+    flavor: '没頭できる時間は、意図的に作れる。',
+    unlockRequires: { buildings: ['whiteboard'], research: ['pomodoro'] },
+    cost: { mindset: 25, growth: 20 },
+    bonus: { creativeFlat: 2, dailyMindset: 1 },
+    unlocksBuildings: [],
+  },
+  // ─── 家事・生活系 ──────────────────────────
+  {
+    id: 'declutter', name: '断捨離', icon: '🗑️',
+    desc: '家事カテゴリの生活報酬+2',
+    flavor: '捨てると、掃除が楽になる。',
+    unlockRequires: { buildings: ['storage_box'], research: [] },
+    cost: { life: 10, mindset: 8 },
+    bonus: { houseLife: 2 },
+    unlocksResearch: ['systematize'],
+  },
+  {
+    id: 'systematize', name: 'ルーティン化', icon: '⚙️',
+    desc: '毎日生活+3（ルーティンが自動で回る）',
+    flavor: 'やる気に頼らない仕組みが、一番強い。',
+    unlockRequires: { buildings: [], research: ['declutter'] },
+    cost: { life: 20, growth: 15 },
+    bonus: { dailyLife: 3 },
+    unlocksResearch: ['energy_efficiency'],
+  },
+  {
+    id: 'energy_efficiency', name: '限界突破', icon: '🔋',
+    desc: 'エナジーの上限+30、毎日エナジー+2',
+    flavor: '上限は、超えるためにある。',
+    unlockRequires: { buildings: [], research: ['systematize'] },
+    cost: { life: 25, energy: 20 },
+    bonus: { energyCapBonus: 30, dailyEnergy: 2 },
+    unlocksBuildings: ['power_bank', 'solar_panel'],
+  },
+  {
+    id: 'charge_master', name: '充電上手になる', icon: '🔌',
+    desc: '毎日エナジー+3',
+    flavor: '上手に休むのも、才能のひとつ。',
+    unlockRequires: { buildings: ['solar_panel'], research: ['energy_efficiency'] },
+    cost: { energy: 30, life: 15 },
+    bonus: { dailyEnergy: 3 },
+    unlocksBuildings: [],
+  },
+
+  // ─── 上限拡張系研究 ──────────────────────
+  {
+    id: 'body_limits', name: '筋肉は裏切らない', icon: '🔥',
+    desc: '体力の上限+40',
+    flavor: 'パワー・イズ・パワー！！',
+    unlockRequires: { buildings: ['foam_roller'], research: ['nutrition_recovery'] },
+    cost: { vitality: 50, growth: 30 },
+    bonus: { vitalityCapBonus: 40 },
+    unlocksBuildings: [],
+  },
+  {
+    id: 'immune_system', name: '免疫力アップ習慣', icon: '🛡️',
+    desc: '健康の上限+40',
+    flavor: '小さな習慣が、じわじわ効いてくる。',
+    unlockRequires: { buildings: ['air_purifier'], research: ['food_body_link'] },
+    cost: { wellness: 50, growth: 30 },
+    bonus: { wellnessCapBonus: 40 },
+    unlocksBuildings: [],
+  },
+  {
+    id: 'deep_learning', name: '深い学びの作り方', icon: '🎓',
+    desc: '成長の上限+40',
+    flavor: '深く掘ると、横に広がる。',
+    unlockRequires: { buildings: ['bookshelf'], research: ['flow_state'] },
+    cost: { growth: 50, mindset: 30 },
+    bonus: { growthCapBonus: 40 },
+    unlocksBuildings: [],
+  },
+  {
+    id: 'stoicism', name: 'ストア哲学入門', icon: '🏛️',
+    desc: '思考の上限+40',
+    flavor: 'できることに集中すると、楽になる。',
+    unlockRequires: { buildings: ['meditation_cushion'], research: ['gratitude_practice'] },
+    cost: { mindset: 50, growth: 30 },
+    bonus: { mindsetCapBonus: 40 },
+    unlocksBuildings: [],
+  },
+  {
+    id: 'life_design', name: 'ライフデザイン', icon: '🗺️',
+    desc: '生活の上限+40',
+    flavor: '計画は大事。でも誤差込みで。',
+    unlockRequires: { buildings: ['cleaning_robot'], research: ['systematize'] },
+    cost: { life: 50, mindset: 30 },
+    bonus: { lifeCapBonus: 40 },
+    unlocksBuildings: [],
+  },
+  // ─── 統合・収束 ───────────────────────────
+  {
+    id: 'life_philosophy', name: '人生哲学', icon: '🌟',
+    desc: '全カテゴリの報酬+1、毎日全資源+2',
+    flavor: 'バラバラな習慣が、ある日つながる。',
+    unlockRequires: { buildings: [], research: ['mindfulness', 'reflection_technique', 'flow_state', 'food_body_link'] },
+    cost: { growth: 50, wellness: 30, mindset: 30, vitality: 20, life: 20 },
+    bonus: { allFlat: 1, dailyAll: 2 },
+    unlocksBuildings: [],
+  },
+];
+
+const ACHIEVEMENTS = [
+  // ── 継続系 ────────────────────────────────
+  { id: 'first_action',   name: '扉を開けた',          desc: '初めて行動を記録した',                icon: '👣', check: s => s.totalActions >= 1 },
+  { id: 'action10',       name: '10回目の自分へ',       desc: '合計10回行動を記録',                 icon: '🔥', check: s => s.totalActions >= 10 },
+  { id: 'action50',       name: '石の上にも三年…の途中', desc: '合計50回行動を記録',               icon: '⭐', check: s => s.totalActions >= 50 },
+  { id: 'action100',      name: '塵も積もれば',         desc: '合計100回行動を記録',                icon: '🏔️', check: s => s.totalActions >= 100 },
+  { id: 'action300',      name: '骨までしみた',         desc: '合計300回行動を記録',                icon: '💎', check: s => s.totalActions >= 300 },
+  { id: 'action1000',     name: '私が習慣で、習慣が私', desc: '合計1000回行動を記録',               icon: '🌌', check: s => s.totalActions >= 1000 },
+  { id: 'day7',           name: '七転び八起き',         desc: '7日間継続',                          icon: '📅', check: s => s.day >= 7 },
+  { id: 'day30',          name: '月をまたいだ',         desc: '30日間継続',                         icon: '🌕', check: s => s.day >= 30 },
+  { id: 'day100',         name: '百日の計',             desc: '100日間継続',                        icon: '🎌', check: s => s.day >= 100 },
+  { id: 'day365',         name: 'ひとまわり',           desc: '365日間継続',                        icon: '🌏', check: s => s.day >= 365 },
+  // ── 道具・研究系 ──────────────────────────
+  { id: 'first_tool',     name: '新生活のはじまりに',         desc: '初めて道具を入手した',               icon: '🔧', check: s => s.totalBuilt >= 1 },
+  { id: 'first_research', name: '知の入口に立った',     desc: '初めて研究を完了',                   icon: '🔬', check: s => s.totalResearched >= 1 },
+  { id: 'tool_all',       name: 'ないものはない',         desc: '全ての道具を入手',                   icon: '🧰', check: s => s.totalBuilt >= 11 },
+  { id: 'research_all',   name: '巨人の肩の上に立つ', desc: '全ての研究を完了',                icon: '🌟', check: s => s.totalResearched >= 17 },
+  // ── カテゴリ特化 ──────────────────────────
+  { id: 'health_20',      name: '靴底が擦れてきた',     desc: '運動を20回記録',                     icon: '👟', check: s => (s.catCount.health||0) >= 20 },
+  { id: 'health_100',     name: '汗をかき続けた者',     desc: '運動を100回記録',                    icon: '🏃', check: s => (s.catCount.health||0) >= 100 },
+  { id: 'house_50',       name: 'きれい好き',   desc: '家事を50回記録',                     icon: '🏠', check: s => (s.catCount.house||0) >= 50 },
+  { id: 'sleep_30',       name: '寝る子は育つ', desc: '休養を30回記録',                  icon: '💤', check: s => (s.catCount.rest||0) >= 30 },
+  { id: 'mind_30',        name: '本の虫のたまご',       desc: '学習を30回記録',                     icon: '📗', check: s => (s.catCount.mind||0) >= 30 },
+  { id: 'mind_100',       name: '読書百遍',             desc: '学習を100回記録',                    icon: '📚', check: s => (s.catCount.mind||0) >= 100 },
+  { id: 'positivity_30',  name: '笑う門には福来たる',   desc: 'マインドを30回記録',                 icon: '😊', check: s => (s.catCount.positivity||0) >= 30 },
+  // ── 資源マイルストーン ─────────────────────
+  { id: 'vitality500',    name: '鋼の肉体',             desc: '体力を累計500以上獲得',              icon: '💪', check: s => (s.totalGained.vitality||0) >= 500 },
+  { id: 'growth500',      name: '知は力なり',           desc: '成長を累計500以上獲得',              icon: '🧠', check: s => (s.totalGained.growth||0) >= 500 },
+  { id: 'life500',        name: '暮らしの達人',         desc: '生活を累計500以上獲得',              icon: '🏡', check: s => (s.totalGained.life||0) >= 500 },
+  { id: 'energy_burn',    name: '使ってこそエナジー', desc: 'エナジーを累計1000消費',             icon: '⚡', check: s => (s.totalEnergySpent||0) >= 1000 },
+  // ── 尖った実績 ────────────────────────────
+  { id: 'perfect_day',    name: '24時間フル活用',       desc: '1日に全カテゴリを各1回以上記録',     icon: '👑', check: s => {
+      return ['health','hygiene','food','house','mind','rest','creative','positivity'].every(c => (s.catCount[c]||0) >= 1);
+    }
+  },
+  { id: 'triple_health',  name: 'トライアスロン',         desc: '同じ日に3種の運動を記録',            icon: '🥇', check: s => (s.tripleHealth||false) },
+  { id: 'no_skip_week',   name: '皆勤の鬼',             desc: '7日間毎日5回以上行動を記録',         icon: '🎖️', check: s => (s.noSkipWeek||false) },
+  { id: 'philosopher',    name: 'コネクティング・ザ・ドッツ',  desc: '人生哲学を習得',                    icon: '☯️', check: s => (s.researchedPhilosophy||false) },
+  { id: 'rest_streak',    name: '眠れる獅子',           desc: '30日連続で休養を記録',               icon: '🌅', check: s => (s.restStreak||0) >= 30 },
+  { id: 'no_rest_10',     name: '眠らない伝説',         desc: '10日連続で休養を記録しなかった',     icon: '💀', check: s => (s.noRestStreak||0) >= 10 },
+  { id: 'same_day_all5',  name: '五輪の書',             desc: '1日で全5資源を同時に獲得',           icon: '🏅', check: s => (s.allResInOneDay||false) },
+  { id: 'mindset_500',    name: '思考は現実化する',     desc: '思考を累計500以上獲得',              icon: '💭', check: s => (s.totalGained.mindset||0) >= 500 },
+  { id: 'wellness_500',   name: '医者いらず',           desc: '健康を累計500以上獲得',              icon: '🌿', check: s => (s.totalGained.wellness||0) >= 500 },
+  { id: 'upgrade10',      name: '職人の領域',             desc: 'いずれかの道具をLv10にした',         icon: '🔨', check: s => Object.values(s.buildingLevels||{}).some(v => v >= 10) },
+  { id: 'tools30',        name: '部屋が狭くなる予感',     desc: '道具の数が30に達した',               icon: '📦', check: s => s.totalBuilt >= 30 },
+  // ── 長期目標系 ────────────────────────────
+  { id: 'lt_first_goal',    name: '地図を広げる',       desc: '長期目標を初めて設定した',           icon: '🗺️', check: s => (s.longTermGoalsCreated||0) >= 1 },
+  { id: 'lt_first_complete',name: '長い旅の終わりに',   desc: '長期目標を1つ達成した(100%)',        icon: '🏁', check: s => (s.longTermGoalsCompleted||0) >= 1 },
+  { id: 'lt_three_complete',name: '道を極める者',       desc: '長期目標を3つ達成した',              icon: '👑', check: s => (s.longTermGoalsCompleted||0) >= 3 },
+  { id: 'lt_streak_7',      name: '継続は力なり',       desc: '長期目標に7日連続で取り組んだ',      icon: '🔥', check: s => (s.longTermStreak||0) >= 7 },
+  { id: 'iron_will',        name: '鉄の意志',           desc: '100回以上行動しながら、自動収入系の道具・研究を一切使わずにいる', icon: '⚔️', check: s => s.hasIronWill === true },
+];
+// ============================================================
+// GAME STATE
+// ============================================================
+
+// 端末のタイムゾーン（現地時間）でYYYY-MM-DD形式の日付を返す
+// ※ Date.toISOString()はUTC基準になるため、日本など UTC+の地域では
+//   深夜〜早朝に日付がずれるバグの元になる。必ずこちらを使うこと。
+function getLocalDateString(d) {
+  d = d || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const DEFAULT_STATE = () => ({
+  day: 1,
+  startDate: getLocalDateString(),
+  resources: { vitality: 0, wellness: 0, growth: 0, mindset: 0, life: 0, energy: 0 },
+  caps:      { vitality: 100, wellness: 100, growth: 100, mindset: 100, life: 100, energy: 100 },
+  todayLog: [],
+  history: [],
+  buildings: {},
+  researched: [],
+  quickActions: seedQuickActions(),
+  nextQuickActionNum: DEFAULT_QUICK_ACTIONS.length + 1, // 新規追加時のID採番用
+  dailyGoalClaimedDate: null, // 今日のデイリー目標を達成済みならその日付
+  hasLoggedFirstAction: false, // チュートリアル後の初回記録済みかどうか（資源/統計/履歴/道具/研究タブの解禁判定）
+  tutorialDone: false, // チュートリアル用の特別な記録を完了したか
+  longTermGoals: [], // 長期目標一覧
+  nextLongTermGoalNum: 1, // 長期目標の新規追加時のID採番用
+  ironWillMode: false, // 鉄の意志モード（自動収入系の道具・研究を非表示にする）
+  stats: {
+    totalActions: 0,
+    totalBuilt: 0,
+    totalResearched: 0,
+    catCount: {},
+    totalGained: { vitality: 0, wellness: 0, growth: 0, mindset: 0, life: 0, energy: 0 },
+    totalEnergySpent: 0,
+  },
+  achievements: [],
+  level: 1,
+  xp: 0,
+  xpToNext: 20,
+  todayHadRest: false,
+  todayHadFood: false,
+  todayHadHealth: false,
+});
+
+const SAVE_KEY = 'dailyLifeForge_v2';
+const BACKUP_KEY = 'dailyLifeForge_v2_backup';
+
+let G = loadState();
+
+function loadState() {
+  // 1. メインのセーブデータを読み込む
+  let raw = null;
+  try {
+    const s = localStorage.getItem(SAVE_KEY);
+    if (s) raw = JSON.parse(s);
+  } catch(e) {
+    console.warn('メインのセーブデータの読み込みに失敗しました:', e);
+  }
+
+  // 2. メインが読めなければ、バックアップから復旧を試みる
+  if (!raw) {
+    try {
+      const b = localStorage.getItem(BACKUP_KEY);
+      if (b) {
+        raw = JSON.parse(b);
+        console.warn('メインのセーブデータが読めなかったため、バックアップから復旧しました');
+      }
+    } catch(e) {
+      console.warn('バックアップの読み込みにも失敗しました:', e);
+    }
+  }
+
+  // 3. どちらも無ければ、本当に初回起動として新規開始
+  if (!raw) return DEFAULT_STATE();
+
+  // 4. sanitizeで例外が起きても、生データ＋デフォルト値のマージで極力復旧する
+  //    （将来のアップデートでここにバグが入っても、いきなり全消しにはしない）
+  try {
+    return sanitizeState(raw);
+  } catch(e) {
+    console.warn('データの整形処理でエラーが発生したため、生データをそのまま復元します:', e);
+    return { ...DEFAULT_STATE(), ...raw };
+  }
+}
+
+function saveState() {
+  try {
+    const json = JSON.stringify(G);
+    localStorage.setItem(SAVE_KEY, json);
+    localStorage.setItem(BACKUP_KEY, json); // 直近の正常な保存を退避しておく
+  } catch(e) {
+    console.warn('セーブに失敗しました:', e);
+  }
+}
+
+// ============================================================
+// RESOURCE HELPERS
+// ============================================================
+
+// 資源キーの配列から代表色を返す（最初の主要資源）
+function rewardColor(rewards) {
+  if (!rewards) return 'var(--border2)';
+  const keys = Object.keys(rewards);
+  return RESOURCES[keys[0]]?.color || 'var(--border2)';
+}
+
+function getResearchBonus(cat, resKey) {
+  let bonus = 0;
+  const R = G.researched;
+  // 食事系
+  if (cat === 'food' && R.includes('food_body_link'))         bonus += 1;
+  if (cat === 'food' && resKey === 'wellness' && R.includes('ingredient_eye')) bonus += 1;
+  // 家事系
+  if (cat === 'house' && R.includes('recipe_repertoire'))     bonus += 1;
+  if (cat === 'house' && resKey === 'life' && R.includes('declutter')) bonus += 2;
+  if (cat === 'house' && resKey === 'wellness' && R.includes('ingredient_eye')) bonus += 1;
+  // 運動系
+  if (cat === 'health' && resKey === 'vitality' && R.includes('stretch_habit')) bonus += 2;
+  if (cat === 'health' && resKey === 'energy' && R.includes('aerobic_basics'))  bonus += 1;
+  // 休養系
+  if (cat === 'rest' && resKey === 'energy' && R.includes('sleep_log'))         bonus += 1;
+  if (cat === 'rest' && resKey === 'energy' && R.includes('nap_power'))         bonus += 3;
+  // 衛生系
+  if (cat === 'hygiene' && resKey === 'energy' && R.includes('micro_break'))    bonus += 2;
+  // 学習系
+  if (cat === 'mind' && resKey === 'growth' && R.includes('writing_habit'))     bonus += 2;
+  if (cat === 'mind' && resKey === 'mindset' && R.includes('pomodoro'))         bonus += 2;
+  // 創作系
+  if (cat === 'creative' && R.includes('flow_state'))                           bonus += 2;
+  // マインド系
+  if (cat === 'positivity' && R.includes('gratitude_practice'))                 bonus += 2;
+  // 全体
+  if (resKey === 'energy' && R.includes('energy_mindset'))                      bonus += 1;
+  if (R.includes('life_philosophy'))                                             bonus += 1;
+  return bonus;
+}
+
+function getBuildingMultiplier(cat) {
+  let mult = 1;
+  for (const b of BUILDINGS) {
+    const lv = G.buildings[b.id] || 0;
+    if (lv > 0 && b.effect && b.effect(cat)) {
+      mult += lv * 0.2;
+    }
+  }
+  return mult;
+}
+
+// エナジー報酬だけを底上げする倍率（カテゴリを問わず全行動に効く道具用）
+function getEnergyBoostMultiplier() {
+  let mult = 1;
+  for (const b of BUILDINGS) {
+    const lv = G.buildings[b.id] || 0;
+    if (lv > 0 && b.energyBoost) {
+      mult += lv * 0.15;
+    }
+  }
+  return mult;
+}
+
+// クイック項目ごとの「最近の実施頻度」に応じた報酬倍率
+// ・3日以上やっていない → +20%、7日以上 → +40%
+// ・直近5日連続でやっている → -15%（下げすぎないよう最大でこれまで）
+function getFrequencyMultiplier(quickActionId) {
+  if (!quickActionId) return 1;
+
+  // 直近10日分の「その日やったか」を調べる（today, yesterday, ...の順）
+  const dayLogs = [G.todayLog, ...G.history.slice(0, 9).map(h => h.log)];
+  const doneFlags = dayLogs.map(log => log.some(item => item.quickActionId === quickActionId));
+
+  // 最後にやったのが何日前か（今日を除き、直近から遡る）
+  let daysSinceLastDone = null;
+  for (let i = 1; i < doneFlags.length; i++) {
+    if (doneFlags[i]) { daysSinceLastDone = i - 1; break; }
+  }
+  if (daysSinceLastDone === null) daysSinceLastDone = doneFlags.length; // 調査範囲内で未実施
+
+  if (daysSinceLastDone >= 7) return 1.4;
+  if (daysSinceLastDone >= 3) return 1.2;
+
+  // 直近5日連続でやっているか（今日を除く昨日から数える）
+  let consecutiveDone = 0;
+  for (let i = 1; i <= 5 && i < doneFlags.length; i++) {
+    if (doneFlags[i]) consecutiveDone++;
+    else break;
+  }
+  if (consecutiveDone >= 5) return 0.85;
+
+  return 1;
+}
+
+function computeRewards(cat, customRewards, quickActionId) {
+  const base = customRewards || ACTION_REWARDS[cat] || {};
+  const mult = getBuildingMultiplier(cat);
+  const freqMult = getFrequencyMultiplier(quickActionId);
+  const energyBoost = getEnergyBoostMultiplier();
+  const result = {};
+  for (const [res, val] of Object.entries(base)) {
+    let v = val;
+    v += getResearchBonus(cat, res);
+    v = Math.round(v * mult * freqMult);
+    if (res === 'energy') v = Math.round(v * energyBoost);
+    v = Math.max(1, v);
+    result[res] = v;
+  }
+  // 省エネ思考：本来エナジーを含まないカテゴリ（家事・学習・創作・マインド）にも、
+  // 研究の効果分だけわずかにエナジーがにじみ出るようにする
+  if (!('energy' in result) && G.researched.includes('energy_mindset')) {
+    let v = getResearchBonus(cat, 'energy');
+    v = Math.round(v * energyBoost);
+    if (v > 0) result.energy = v;
+  }
+  // 栄養と回復：運動後の体力ボーナス
+  if (G.researched.includes('nutrition_recovery') && G.todayHadHealth && cat === 'food') {
+    result.vitality = (result.vitality || 0) + 2;
+  }
+  if (G.researched.includes('nutrition_recovery') && G.todayHadFood && cat === 'health') {
+    result.vitality = (result.vitality || 0) + 2;
+  }
+  return result;
+}
+
+function applyRewards(rewards) {
+  for (const [res, val] of Object.entries(rewards)) {
+    G.resources[res] = Math.min((G.resources[res] || 0) + val, G.caps[res] || 999);
+    G.stats.totalGained[res] = (G.stats.totalGained[res] || 0) + val;
+  }
+}
+
+// ============================================================
+// DAILY PASSIVE BONUSES (from buildings + research)
+// ============================================================
+
+function applyPassiveBonuses() {
+  const bonus = {};
+  // 道具のパッシブボーナス
+  for (const b of BUILDINGS) {
+    const lv = G.buildings[b.id] || 0;
+    if (lv > 0 && b.passiveBonus) {
+      const pb = b.passiveBonus(lv);
+      for (const [k, v] of Object.entries(pb)) bonus[k] = (bonus[k] || 0) + v;
+    }
+  }
+  // 研究のデイリーボーナス
+  for (const rid of G.researched) {
+    const r = RESEARCH.find(x => x.id === rid);
+    if (!r) continue;
+    if (r.bonus.dailyMindset)  bonus.mindset  = (bonus.mindset  || 0) + r.bonus.dailyMindset;
+    if (r.bonus.dailyWellness) bonus.wellness = (bonus.wellness || 0) + r.bonus.dailyWellness;
+    if (r.bonus.dailyEnergy)   bonus.energy   = (bonus.energy   || 0) + r.bonus.dailyEnergy;
+    if (r.bonus.dailyGrowth)   bonus.growth   = (bonus.growth   || 0) + r.bonus.dailyGrowth;
+    if (r.bonus.dailyLife)     bonus.life     = (bonus.life     || 0) + r.bonus.dailyLife;
+    if (r.bonus.dailyVitality) bonus.vitality = (bonus.vitality || 0) + r.bonus.dailyVitality;
+    if (r.bonus.dailyAll) for (const k of Object.keys(G.resources)) bonus[k] = (bonus[k] || 0) + r.bonus.dailyAll;
+  }
+  // 快眠ルーティン：休養した日の翌日エナジー+5
+  if (G.researched.includes('sleep_routine') && G.todayHadRest) bonus.energy = (bonus.energy || 0) + 5;
+  for (const [k, v] of Object.entries(bonus)) {
+    G.resources[k] = Math.min((G.resources[k] || 0) + v, G.caps[k] || 999);
+    G.stats.totalGained[k] = (G.stats.totalGained[k] || 0) + v;
+  }
+  return bonus;
+}
+
+// ============================================================
+// BUILDING COST
+// ============================================================
+
+function buildingCostAtLevel(b, nextLv) {
+  const cost = {};
+  for (const [res, val] of Object.entries(b.baseCost)) {
+    cost[res] = Math.ceil(val * Math.pow(b.costScale, nextLv - 1));
+  }
+  return cost;
+}
+
+function canAfford(cost) {
+  return Object.entries(cost).every(([r, v]) => (G.resources[r] || 0) >= v);
+}
+
+// 道具の解放条件を満たしているか
+function isBuildingUnlocked(b) {
+  const req = b.unlockRequires || { buildings: [], research: [] };
+  const bOk = (req.buildings || []).every(id => (G.buildings[id] || 0) > 0);
+  const rOk = (req.research || []).every(id => G.researched.includes(id));
+  return bOk && rOk;
+}
+
+// 研究の解放条件を満たしているか
+function isResearchUnlocked(r) {
+  const req = r.unlockRequires || { buildings: [], research: [] };
+  const bOk = (req.buildings || []).every(id => (G.buildings[id] || 0) > 0);
+  const rOk = (req.research || []).every(id => G.researched.includes(id));
+  return bOk && rOk;
+}
+
+// 可視性ステータス判定 (旧isUnlocked互換)
+// 'done' | 'unlocked' | 'locked' | 'hidden'
+// 「鉄の意志」対象：行動しなくても資源が自動で増える系の道具・研究
+const IRON_WILL_BLOCKED_BUILDINGS = ['protein_shaker', 'big_pot', 'electric_kettle', 'eye_mask', 'whiteboard', 'solar_panel'];
+const IRON_WILL_BLOCKED_RESEARCH = ['nutrition_recovery', 'food_body_link', 'mindfulness', 'gratitude_practice', 'reflection_technique', 'flow_state', 'systematize', 'energy_efficiency', 'charge_master', 'life_philosophy'];
+
+function getBuildingStatus(b) {
+  const lv = G.buildings[b.id] || 0;
+  if (lv > 0) return 'done';
+  // 鉄の意志モード：自動収入系の道具は強制的に非表示（誤って選んでしまわないように）
+  if (G.ironWillMode && IRON_WILL_BLOCKED_BUILDINGS.includes(b.id)) return 'hidden';
+  if (isBuildingUnlocked(b)) return 'unlocked';
+  // 前提の全てがdone or unlocked か？
+  const req = b.unlockRequires || { buildings: [], research: [] };
+  const allPrereqVisible =
+    (req.buildings || []).every(id => {
+      const pb = BUILDINGS.find(x => x.id === id);
+      if (!pb) return false;
+      const st = getBuildingStatus(pb);
+      return st === 'done' || st === 'unlocked';
+    }) &&
+    (req.research || []).every(id => {
+      const pr = RESEARCH.find(x => x.id === id);
+      if (!pr) return false;
+      const st = getResearchStatus(pr);
+      return st === 'done' || st === 'unlocked';
+    });
+  if (allPrereqVisible) return 'locked';
+  return 'hidden';
+}
+
+function getResearchStatus(r) {
+  if (G.researched.includes(r.id)) return 'done';
+  // 鉄の意志モード：自動収入系の研究は強制的に非表示（誤って選んでしまわないように）
+  if (G.ironWillMode && IRON_WILL_BLOCKED_RESEARCH.includes(r.id)) return 'hidden';
+  if (isResearchUnlocked(r)) return 'unlocked';
+  const req = r.unlockRequires || { buildings: [], research: [] };
+  const allPrereqVisible =
+    (req.buildings || []).every(id => {
+      const pb = BUILDINGS.find(x => x.id === id);
+      if (!pb) return false;
+      const st = getBuildingStatus(pb);
+      return st === 'done' || st === 'unlocked';
+    }) &&
+    (req.research || []).every(id => {
+      const pr = RESEARCH.find(x => x.id === id);
+      if (!pr) return false;
+      const st = getResearchStatus(pr);
+      return st === 'done' || st === 'unlocked';
+    });
+  if (allPrereqVisible) return 'locked';
+  return 'hidden';
+}
+
+// 資源の可視性：一度でも獲得したことがあれば表示
+function isResourceVisible(key) {
+  return (G.stats.totalGained[key] || 0) > 0;
+}
+
+// 旧互換（使われている箇所を安全に保つ）
+function isUnlocked(unlockAt) {
+  return Object.entries(unlockAt || {}).every(([r, v]) => {
+    if (Object.keys(G.resources).includes(r)) return (G.resources[r] || 0) >= v;
+    return true;
+  });
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+let logTargetDay = 'today'; // 'today' | 'yesterday'
+
+function setLogTarget(target) {
+  logTargetDay = target;
+  const btnToday = document.getElementById('btn-target-today');
+  const btnYesterday = document.getElementById('btn-target-yesterday');
+  const heading = document.getElementById('record-section-heading');
+  if (target === 'today') {
+    btnToday.classList.add('active');
+    btnToday.classList.remove('yesterday-active');
+    btnYesterday.classList.remove('active', 'yesterday-active');
+    heading.textContent = '今日の行動を記録';
+  } else {
+    btnYesterday.classList.add('active', 'yesterday-active');
+    btnToday.classList.remove('active');
+    const yDay = G.history[0];
+    const dateStr = yDay ? formatDateJP(getDateForDay(yDay.day)) : '昨日';
+    heading.textContent = `${dateStr}の行動を記録（あとから追加）`;
+  }
+}
+
+// チュートリアル専用の記録（通常のlogActionは通さず、統計・実績には影響させない）
+function completeTutorial() {
+  if (G.tutorialDone) return;
+  G.tutorialDone = true;
+  applyRewards({ growth: 1, energy: 1 });
+  saveState();
+  render();
+  toast('🎉 準備完了！さっそく記録してみましょう', true);
+}
+
+function logAction(customRewards, quickActionId) {
+  const cat = document.getElementById('action-cat').value;
+  const text = document.getElementById('action-input').value.trim();
+  if (!text) { toast('行動内容を入力してください', false); return; }
+
+  const rewards = computeRewards(cat, customRewards, quickActionId);
+  applyRewards(rewards);
+
+  const entry = { cat, text, rewards, quickActionId: quickActionId || null, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) };
+  G.stats.totalActions++;
+  G.stats.catCount[cat] = (G.stats.catCount[cat] || 0) + 1;
+  gainXP(5 + Object.values(rewards).reduce((a,b) => a+b, 0));
+
+  const rewardStr = Object.entries(rewards).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+
+  if (logTargetDay === 'yesterday' && G.history[0]) {
+    // 昨日の記録として、履歴に直接追加する
+    G.history[0].log.unshift(entry);
+    document.getElementById('action-input').value = '';
+    checkAchievements();
+    saveState();
+    render();
+    setLogTarget('today'); // 送信後は自動で「今日」に戻す（誤操作防止）
+    toast(`✓ 昨日の記録に追加：${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}`, true);
+    return;
+  }
+
+  G.todayLog.unshift(entry);
+  if (cat === 'rest') G.todayHadRest = true;
+  if (cat === 'food') G.todayHadFood = true;
+  if (cat === 'health') G.todayHadHealth = true;
+
+  const wasFirstAction = !G.hasLoggedFirstAction;
+  G.hasLoggedFirstAction = true; // 本当の初回記録 → 道具/研究/資源/統計/履歴タブを解禁
+
+  document.getElementById('action-input').value = '';
+  checkAchievements();
+  checkCombo();
+  checkDailyGoal(cat);
+  saveState();
+  render();
+
+  if (wasFirstAction) {
+    setTimeout(() => toast('🎉 タブが解放されました！', true), 700);
+  }
+  toast(`${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}`, true);
+}
+
+function updateCatPreview() {
+  const cat = document.getElementById('action-cat').value;
+  const rewards = computeRewards(cat);
+  const el = document.getElementById('cat-preview');
+  if (!el) return;
+  el.innerHTML = Object.entries(rewards).map(([r,v]) => {
+    const res = RESOURCES[r];
+    return `<span class="cat-preview-badge" style="background:${res.color}22;color:${res.color}">+${v}${res.icon} ${res.name}</span>`;
+  }).join('');
+}
+
+function quickLog(cat, label, customRewards, quickActionId) {
+  document.getElementById('action-cat').value = cat;
+  document.getElementById('action-input').value = label;
+  logAction(customRewards, quickActionId);
+}
+
+function quickLogById(id) {
+  const a = G.quickActions.find(x => x.id === id);
+  if (!a) return;
+  quickLog(a.cat, a.label, a.customRewards, a.id);
+}
+
+
+function deleteLogItem(idx) {
+  const item = G.todayLog[idx];
+  if (!item) return;
+  if (!confirm(`「${item.text}」を削除しますか？獲得した資源も取り消されます。`)) return;
+
+  // 資源を巻き戻す（上限超過分は考慮し、マイナスにはしない）
+  for (const [res, val] of Object.entries(item.rewards)) {
+    G.resources[res] = Math.max(0, (G.resources[res] || 0) - val);
+    G.stats.totalGained[res] = Math.max(0, (G.stats.totalGained[res] || 0) - val);
+  }
+
+  // 統計を巻き戻す
+  G.stats.totalActions = Math.max(0, G.stats.totalActions - 1);
+  G.stats.catCount[item.cat] = Math.max(0, (G.stats.catCount[item.cat] || 0) - 1);
+
+  // todayHadRest/Food/Health フラグを再計算（同じカテゴリの記録が他に残っているか確認）
+  G.todayLog.splice(idx, 1);
+  G.todayHadRest = G.todayLog.some(l => l.cat === 'rest');
+  G.todayHadFood = G.todayLog.some(l => l.cat === 'food');
+  G.todayHadHealth = G.todayLog.some(l => l.cat === 'health');
+
+  saveState();
+  render();
+  toast(`「${item.text}」を削除しました`, false);
+}
+
+// 「昨日（あとから追加）」の記録を削除する（履歴の最新日のみが対象）
+function deleteYesterdayLogItem(idx) {
+  const yDay = G.history[0];
+  if (!yDay) return;
+  const item = yDay.log[idx];
+  if (!item) return;
+  if (!confirm(`「${item.text}」を削除しますか？獲得した資源も取り消されます。`)) return;
+
+  for (const [res, val] of Object.entries(item.rewards)) {
+    G.resources[res] = Math.max(0, (G.resources[res] || 0) - val);
+    G.stats.totalGained[res] = Math.max(0, (G.stats.totalGained[res] || 0) - val);
+  }
+
+  G.stats.totalActions = Math.max(0, G.stats.totalActions - 1);
+  G.stats.catCount[item.cat] = Math.max(0, (G.stats.catCount[item.cat] || 0) - 1);
+
+  yDay.log.splice(idx, 1);
+
+  saveState();
+  render();
+  toast(`「${item.text}」を削除しました`, false);
+}
+
+// ============================================================
+// ENERGY CONVERSION
+// ============================================================
+
+function convertEnergy(id) {
+  if (!G.researched.includes('energy_basics')) return; // 未解放なら機能自体を無効化
+  const conv = ENERGY_CONVERSIONS.find(c => c.id === id);
+  if (!conv) return;
+  if ((G.resources.energy || 0) < conv.cost) { toast('エナジーが足りません！', false); return; }
+
+  G.resources.energy -= conv.cost;
+  G.stats.totalEnergySpent = (G.stats.totalEnergySpent || 0) + conv.cost;
+  applyRewards(conv.gain);
+
+  saveState();
+  render();
+
+  const gainStr = Object.entries(conv.gain).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+  toast(`${conv.icon} ${conv.name} → ⚡${conv.cost}消費 → ${gainStr}`, true);
+}
+
+// ============================================================
+// TOOLS (道具)
+// ============================================================
+
+function buildOrUpgrade(bid) {
+  const b = BUILDINGS.find(x => x.id === bid);
+  if (!b) return;
+  const lv = G.buildings[bid] || 0;
+  const cost = buildingCostAtLevel(b, lv + 1);
+  if (!canAfford(cost)) { toast('資源が足りません！', false); return; }
+  if (!isBuildingUnlocked(b)) { toast('まだ入手できません', false); return; }
+
+  for (const [r, v] of Object.entries(cost)) G.resources[r] -= v;
+  G.buildings[bid] = lv + 1;
+  G.stats.totalBuilt++;
+
+  if (b.capBonus) {
+    for (const [r, v] of Object.entries(b.capBonus)) {
+      G.caps[r] = (G.caps[r] || 100) + v;
+    }
+  }
+
+  // この道具入手で解放される研究をチェック → 行動タブにコメント
+  const newResearch = (b.unlocksResearch || []).filter(id => !G.researched.includes(id));
+  newResearch.forEach(id => {
+    const rr = RESEARCH.find(x => x.id === id);
+    if (rr && isResearchUnlocked(rr)) {
+      addSystemLog(`🔬 新しい研究が解放されました：「${rr.name}」`);
+    }
+  });
+
+  gainXP(20);
+  checkAchievements();
+  saveState();
+  render();
+  toast(`${b.icon} ${b.name} Lv${lv+1} 入手！`, true);
+}
+
+// ============================================================
+// RESEARCH
+// ============================================================
+
+function doResearch(rid) {
+  if (G.researched.includes(rid)) return;
+  const r = RESEARCH.find(x => x.id === rid);
+  if (!r) return;
+  if (!isResearchUnlocked(r)) { toast('まだ研究できません', false); return; }
+  if (!canAfford(r.cost)) { toast('資源が足りません！', false); return; }
+
+  for (const [res, val] of Object.entries(r.cost)) G.resources[res] -= val;
+  G.researched.push(rid);
+  G.stats.totalResearched++;
+
+  if (r.bonus.energyCapBonus)   G.caps.energy   = (G.caps.energy   || 100) + r.bonus.energyCapBonus;
+  if (r.bonus.vitalityCapBonus) G.caps.vitality = (G.caps.vitality || 100) + r.bonus.vitalityCapBonus;
+  if (r.bonus.wellnessCapBonus) G.caps.wellness = (G.caps.wellness || 100) + r.bonus.wellnessCapBonus;
+  if (r.bonus.growthCapBonus)   G.caps.growth   = (G.caps.growth   || 100) + r.bonus.growthCapBonus;
+  if (r.bonus.mindsetCapBonus)  G.caps.mindset  = (G.caps.mindset  || 100) + r.bonus.mindsetCapBonus;
+  if (r.bonus.lifeCapBonus)     G.caps.life     = (G.caps.life     || 100) + r.bonus.lifeCapBonus;
+
+  // 特殊実績チェック
+  if (rid === 'life_philosophy') G.stats.researchedPhilosophy = true;
+
+  // 機能そのものを解放する特別な研究の通知
+  if (rid === 'daily_rhythm') addSystemLog('🎯 「デイリー目標」機能が解放されました！行動タブをチェック');
+  if (rid === 'energy_basics') addSystemLog('⚡ 「エナジーを使う」機能が解放されました！行動タブをチェック');
+  if (rid === 'long_term_view') addSystemLog('🗺️ 「長期」タブが解放されました！じっくり進める目標を設定してみましょう');
+
+  // この研究で解放される道具をチェック → 行動タブにコメント
+  const newBuildings = (r.unlocksBuildings || []).filter(id => !(G.buildings[id] > 0));
+  newBuildings.forEach(id => {
+    const bb = BUILDINGS.find(x => x.id === id);
+    if (bb && isBuildingUnlocked(bb)) {
+      addSystemLog(`🔧 新しい道具が入手可能になりました：「${bb.name}」`);
+    }
+  });
+  // この研究で解放される追加研究もチェック
+  const newResearch = (r.unlocksResearch || []).filter(id => !G.researched.includes(id));
+  newResearch.forEach(id => {
+    const rr = RESEARCH.find(x => x.id === id);
+    if (rr && isResearchUnlocked(rr)) {
+      addSystemLog(`🔬 新しい研究が解放されました：「${rr.name}」`);
+    }
+  });
+
+  gainXP(30);
+  checkAchievements();
+  saveState();
+  render();
+  toast(`${r.icon} 研究完了: ${r.name}`, true);
+}
+
+// ============================================================
+// DAY END
+// ============================================================
+
+function endDay() {
+  const passive = applyPassiveBonuses();
+  G.history.unshift({ day: G.day, log: [...G.todayLog], passive });
+  G.todayLog = [];
+  G.systemLogs = []; // 実績解除・アンロック通知は日をまたいだら消す
+  G.day++;
+  G.todayHadRest = false;
+  G.todayHadFood = false;
+  G.todayHadHealth = false;
+
+  checkAchievements();
+  saveState();
+  render();
+  toast(`Day ${G.day}（${formatDateJP(getDateForDay(G.day))}）スタート！`, true);
+}
+
+// 起動時に日付ズレを自動補正（日付が変わったら自動で日送り、端末のローカル時刻の24時基準）
+function autoAdvanceDay() {
+  if (!G.startDate) return;
+  const today = getLocalDateString();
+  const todayDate = new Date(today + 'T00:00:00');
+  const startDate = new Date(G.startDate + 'T00:00:00');
+  const diffDays = Math.floor((todayDate - startDate) / 86400000) + 1; // Day1がstartDate
+  // 現在のG.dayより実際の今日が先に進んでいたら自動で日送り
+  while (G.day < diffDays) {
+    endDay();
+  }
+}
+
+// ============================================================
+// XP & LEVEL
+// ============================================================
+
+function gainXP(amount) {
+  G.xp += amount;
+  while (G.xp >= G.xpToNext) {
+    G.xp -= G.xpToNext;
+    G.level++;
+    G.xpToNext = Math.floor(G.xpToNext * 1.4);
+    showLevelUp(G.level);
+  }
+}
+
+function showLevelUp(lv) {
+  const el = document.createElement('div');
+  el.className = 'levelup';
+  el.innerHTML = `<div class="levelup-inner"><div class="levelup-title">⬆ Level ${lv}!</div><div class="levelup-sub">生活力が上がった！</div></div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+
+// システムログ（行動タブの今日の記録欄に表示）
+function addSystemLog(msg) {
+  if (!G.systemLogs) G.systemLogs = [];
+  G.systemLogs.unshift({ msg, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) });
+  if (G.systemLogs.length > 20) G.systemLogs.pop();
+}
+
+function checkAchievements() {
+  const stats = G.stats;
+
+  // 完璧な一日
+  const todayCats = new Set(G.todayLog.map(l => l.cat));
+  const allCats = ['health','hygiene','food','house','mind','rest','creative','positivity'];
+  if (allCats.every(c => todayCats.has(c))) stats.perfectDay = true;
+
+  // トリプル運動（本日3種類の運動）
+  const uniqueHealthLabels = new Set(G.todayLog.filter(l => l.cat === 'health').map(l => l.text));
+  if (uniqueHealthLabels.size >= 3) stats.tripleHealth = true;
+
+  // 1日で全5資源を同時獲得
+  const todayResources = new Set();
+  G.todayLog.forEach(l => Object.keys(l.rewards || {}).forEach(r => todayResources.add(r)));
+  if (['vitality','wellness','growth','mindset','life'].every(r => todayResources.has(r))) stats.allResInOneDay = true;
+
+  // 道具Lv10
+  stats.buildingLevels = { ...G.buildings };
+
+  // 鉄の意志：一定以上プレイしていながら、自動収入系の道具・研究を一切使っていない
+  const hasPassiveBuilding = IRON_WILL_BLOCKED_BUILDINGS.some(id => (G.buildings[id] || 0) > 0);
+  const hasPassiveResearch = IRON_WILL_BLOCKED_RESEARCH.some(id => G.researched.includes(id));
+  stats.hasIronWill = (stats.totalActions || 0) >= 100 && !hasPassiveBuilding && !hasPassiveResearch;
+
+  // 履歴ベースの連続記録判定
+  if (G.history.length >= 6) {
+    if (G.history.slice(0, 6).every(h => h.log.length >= 5)) stats.noSkipWeek = true;
+  }
+  if (G.history.length >= 29) {
+    if (G.history.slice(0, 29).every(h => h.log.some(l => l.cat === 'rest'))) stats.restStreak = 30;
+    // 眠らない伝説：10日連続で休養なし
+    let noRestCount = 0;
+    for (const h of G.history.slice(0, 10)) {
+      if (!h.log.some(l => l.cat === 'rest')) noRestCount++;
+      else break;
+    }
+    if (noRestCount >= 10) stats.noRestStreak = 10;
+  }
+
+  // 長期目標の連続取り組み日数（今日から遡って計算）
+  const ltDates = getAllLongTermProgressDates();
+  let ltStreak = 0;
+  let checkDate = new Date();
+  while (ltDates.has(getLocalDateString(checkDate))) {
+    ltStreak++;
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+  stats.longTermStreak = ltStreak;
+
+  for (const ach of ACHIEVEMENTS) {
+    if (!G.achievements.includes(ach.id) && ach.check(stats)) {
+      G.achievements.push(ach.id);
+      addSystemLog(`🏅 実績解除！「${ach.name}」— 素晴らしい！`);
+      setTimeout(() => toast(`🏅 実績解除: ${ach.name}`, true), 400);
+    }
+  }
+}
+
+// 管理者モード
+let adminMode = false;
+let hideDoneResearch = true; // デフォルトON
+
+function handleAdminToggle() {
+  adminMode = !adminMode;
+  updateAdminUI();
+  render();
+  toast(adminMode ? '🔓 管理者モード ON（全項目表示中）' : '🔒 管理者モード OFF', adminMode);
+}
+
+function handleHideDoneToggle() {
+  hideDoneResearch = !hideDoneResearch;
+  updateHideDoneUI();
+  render();
+}
+
+function updateHideDoneUI() {
+  const label = document.getElementById('hide-done-label');
+  const toggle = document.getElementById('hide-done-toggle');
+  const knob = document.getElementById('hide-done-knob');
+  if (!label) return;
+  label.textContent = hideDoneResearch ? 'ON' : 'OFF';
+  label.style.color = hideDoneResearch ? 'var(--accent)' : 'var(--text3)';
+  if (toggle) toggle.style.background = hideDoneResearch ? 'var(--accent-dim)' : 'var(--surface3)';
+  if (toggle) toggle.style.borderColor = hideDoneResearch ? 'var(--accent)' : 'var(--border2)';
+  if (knob) { knob.style.left = hideDoneResearch ? '23px' : '3px'; knob.style.background = hideDoneResearch ? 'var(--accent)' : 'var(--text3)'; }
+}
+function updateAdminUI() {
+  const label = document.getElementById('admin-mode-label');
+  const toggle = document.getElementById('admin-toggle');
+  const knob = document.getElementById('admin-knob');
+  if (!label) return;
+  label.textContent = adminMode ? 'ON' : 'OFF';
+  label.style.color = adminMode ? 'var(--coral)' : 'var(--text3)';
+  if (toggle) toggle.style.background = adminMode ? 'var(--coral-dim)' : 'var(--surface3)';
+  if (knob) { knob.style.left = adminMode ? '23px' : '3px'; knob.style.background = adminMode ? 'var(--coral)' : 'var(--text3)'; }
+}
+
+// 鉄の意志モード（実績「鉄の意志」解除後にのみ設定タブに表示される。セーブデータに保存する）
+function handleIronWillToggle() {
+  G.ironWillMode = !G.ironWillMode;
+  saveState();
+  updateIronWillUI();
+  render();
+  toast(G.ironWillMode ? '⚔️ 鉄の意志モード ON（自動収入系を非表示中）' : '鉄の意志モード OFF', true);
+}
+
+function updateIronWillUI() {
+  const section = document.getElementById('iron-will-settings');
+  if (section) section.style.display = G.achievements.includes('iron_will') ? 'block' : 'none';
+
+  const label = document.getElementById('iron-will-label');
+  const toggle = document.getElementById('iron-will-toggle');
+  const knob = document.getElementById('iron-will-knob');
+  if (!label) return;
+  label.textContent = G.ironWillMode ? 'ON' : 'OFF';
+  label.style.color = G.ironWillMode ? 'var(--accent)' : 'var(--text3)';
+  if (toggle) toggle.style.background = G.ironWillMode ? 'var(--accent-dim)' : 'var(--surface3)';
+  if (toggle) toggle.style.borderColor = G.ironWillMode ? 'var(--accent)' : 'var(--border2)';
+  if (knob) { knob.style.left = G.ironWillMode ? '23px' : '3px'; knob.style.background = G.ironWillMode ? 'var(--accent)' : 'var(--text3)'; }
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+
+function toast(msg, good) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (good ? ' good' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+// ============================================================
+// TABS
+// ============================================================
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (el) el.classList.add('active');
+  render();
+}
+
+// ============================================================
+// タブのスワイプ切り替え
+// ============================================================
+
+let swipeStartX = null;
+let swipeStartY = null;
+
+function initSwipeNavigation() {
+  const content = document.querySelector('.content');
+  if (!content) return;
+
+  content.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  content.addEventListener('touchend', (e) => {
+    if (swipeStartX === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - swipeStartX;
+    const dy = endY - swipeStartY;
+    swipeStartX = null;
+    swipeStartY = null;
+
+    // 横方向への意図的なスワイプ（縦スクロールと誤認しないよう、横優勢かつ一定距離以上のみ反応）
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      switchToAdjacentTab(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+}
+
+function switchToAdjacentTab(direction) {
+  const allTabs = Array.from(document.querySelectorAll('.tab'));
+  const visibleTabs = allTabs.filter(t => getComputedStyle(t).display !== 'none');
+  const activeIndex = visibleTabs.findIndex(t => t.classList.contains('active'));
+  if (activeIndex === -1) return;
+
+  const newIndex = activeIndex + direction;
+  if (newIndex < 0 || newIndex >= visibleTabs.length) return; // 端では何もしない（ループしない）
+
+  const newTab = visibleTabs[newIndex];
+  const onclickAttr = newTab.getAttribute('onclick') || '';
+  const match = onclickAttr.match(/switchTab\('(\w+)'/);
+  if (match) switchTab(match[1], newTab);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render() {
+  renderResourcesBar();
+  renderHeaderDay();
+  renderActionsPanel();
+  renderBuildingsPanel();
+  renderResearchPanel();
+  renderStatsPanel();
+  renderHistoryPanel();
+  renderResourcesPanel();
+  renderLongTermPanel();
+  updateOnboardingUI();
+  updateLongTermTabVisibility();
+  updateIronWillUI();
+  updateTopBarHeight();
+}
+
+// 「長期」タブは research 'long_term_view' 完了まで存在自体を隠す
+function updateLongTermTabVisibility() {
+  const unlocked = G.researched.includes('long_term_view');
+  const tab = document.getElementById('tab-longterm');
+  if (tab) tab.style.display = unlocked ? '' : 'none';
+  if (!unlocked) {
+    const activePanel = document.querySelector('.panel.active');
+    if (activePanel && activePanel.id === 'panel-longterm') {
+      switchTab('actions', document.querySelector('.tab'));
+    }
+  }
+}
+
+// 初回記録が済むまで、道具・研究タブを隠す
+function updateOnboardingUI() {
+  const unlocked = !!G.hasLoggedFirstAction;
+  const tabIds = ['tab-buildings', 'tab-research', 'tab-resources', 'tab-stats', 'tab-history'];
+  tabIds.forEach(id => {
+    const tab = document.getElementById(id);
+    if (tab) tab.style.display = unlocked ? '' : 'none';
+  });
+
+  // もしこれらのタブを表示中に未解禁状態へ戻ることは無いが、
+  // 念のため未解禁なのに対象タブが選択されていたら行動タブに戻す
+  if (!unlocked) {
+    const activePanel = document.querySelector('.panel.active');
+    const gatedPanelIds = ['panel-buildings', 'panel-research', 'panel-resources', 'panel-stats', 'panel-history'];
+    if (activePanel && gatedPanelIds.includes(activePanel.id)) {
+      const actionsTab = document.querySelector('.tab');
+      switchTab('actions', actionsTab);
+    }
+  }
+}
+
+// top-barの実測高さをCSS変数に反映（sticky要素のズレを防ぐ）
+function updateTopBarHeight() {
+  const bar = document.getElementById('top-bar');
+  if (!bar) return;
+  requestAnimationFrame(() => {
+    const h = bar.offsetHeight;
+    if (h > 0) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  });
+}
+
+window.addEventListener('resize', updateTopBarHeight);
+window.addEventListener('orientationchange', updateTopBarHeight);
+
+function renderHeaderDay() {
+  const dateStr = formatDateJP(getDateForDay(G.day));
+  document.getElementById('header-day-display').innerHTML =
+    `Day ${G.day} <span style="color:var(--text3)">(${dateStr})</span> &nbsp;|&nbsp; Lv.${G.level}
+    <div class="xp-bar-wrap" style="width:120px;display:inline-block;vertical-align:middle;margin-left:6px">
+      <div class="xp-bar-fill" style="width:${Math.round(G.xp/G.xpToNext*100)}%"></div>
+    </div>
+    <span style="font-size:10px;margin-left:4px">${G.xp}/${G.xpToNext}</span>`;
+}
+
+function renderResourcesBar() {
+  const bar = document.getElementById('resources-bar');
+  bar.innerHTML = Object.entries(RESOURCES).map(([key, res]) => {
+    const val = Math.floor(G.resources[key] || 0);
+    const cap = G.caps[key] || 100;
+    return `<div class="res-pill" title="${res.name}: ${val}/${cap}">
+      <span class="res-icon">${res.icon}</span>
+      <span class="res-val">${val}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderActionsPanel() {
+  // ── フェーズ分岐：チュートリアル画面 or 通常画面 ──
+  const tutorialScreen = document.getElementById('tutorial-screen');
+  const normalContent = document.getElementById('normal-actions-content');
+  if (!G.tutorialDone) {
+    // フェーズA：チュートリアル未完了 → 専用画面のみ表示
+    if (tutorialScreen) {
+      tutorialScreen.style.display = 'block';
+      tutorialScreen.innerHTML = `<div class="tutorial-box">
+        <div class="tutorial-title">👋 ようこそ、Daily Life Forgeへ</div>
+        <div class="tutorial-body">
+          毎日の行動が、資源になる。<br>
+          資源で道具や研究を進めて、暮らしを育てるゲームです。<br><br>
+          まずは下のボタンから始めてみましょう。
+        </div>
+        <button class="tutorial-action-btn" onclick="completeTutorial()">🌱 はじめの一歩を踏み出す</button>
+        <div class="tutorial-action-reward">+1📖 成長　+1⚡ エナジー</div>
+      </div>`;
+    }
+    if (normalContent) normalContent.style.display = 'none';
+    return; // フェーズAではこれ以降の通常描画は行わない
+  }
+  if (tutorialScreen) { tutorialScreen.style.display = 'none'; tutorialScreen.innerHTML = ''; }
+  if (normalContent) normalContent.style.display = 'block';
+
+  updateCatPreview();
+  renderDailyGoalCard();
+
+  // 初回記録前のヒント表示（チュートリアル済み・実記録がまだの間だけ表示）
+  const hintEl = document.getElementById('onboarding-hint');
+  if (hintEl) {
+    if (!G.hasLoggedFirstAction) {
+      hintEl.style.display = 'block';
+      hintEl.innerHTML = `<div class="onboarding-hint-box">
+        <div style="font-size:20px;margin-bottom:4px">👋</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">まずは1つ、記録してみましょう</div>
+        <div style="font-size:11px;color:var(--text2)">下のクイック記録から選ぶか、手入力してみてください。<br>記録すると他のタブも解放されます。</div>
+      </div>`;
+    } else {
+      hintEl.style.display = 'none';
+      hintEl.innerHTML = '';
+    }
+  }
+
+  // 「昨日」が存在する場合のみトグルを表示
+  const targetRow = document.getElementById('log-target-row');
+  if (targetRow) {
+    const hasYesterday = G.history.length > 0 && G.history[0].day === G.day - 1;
+    targetRow.style.display = hasYesterday ? 'block' : 'none';
+    if (!hasYesterday && logTargetDay === 'yesterday') setLogTarget('today');
+  }
+
+  // category streak bar（創作は対象外）
+  const streakBar = document.getElementById('cat-streak-bar');
+  if (streakBar) {
+    streakBar.innerHTML = Object.entries(CATEGORY_INFO)
+      .filter(([cat]) => cat !== 'creative')
+      .map(([cat, ci]) => {
+      const todayCount = G.todayLog.filter(l => l.cat === cat).length;
+      const active = todayCount > 0;
+      const col = getCatColor(cat);
+      const borderStyle = active ? `border-color:${col};background:${col}22` : '';
+      return `<div class="streak-item ${active ? 'active' : ''}" style="${borderStyle}">
+        <span class="streak-icon">${ci.icon}</span>
+        <span class="streak-cnt" style="${active ? `color:${col}` : ''}">${todayCount > 0 ? todayCount : '－'}</span>
+        <span class="streak-name">${ci.label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // quick chips：主資源別にグループ化して表示
+  const chips = document.getElementById('quick-chips');
+
+  const groups = [
+    { resKey: 'vitality', label: '💪 体力' },
+    { resKey: 'wellness', label: '🌿 健康' },
+    { resKey: 'life',     label: '🏠 生活' },
+    { resKey: 'growth',   label: '📖 成長' },
+    { resKey: 'mindset',  label: '💭 思考' },
+  ];
+  chips.innerHTML = groups.map(g => {
+    const groupActions = G.quickActions.filter(a => (a.primaryRes || CATEGORY_INFO[a.cat]?.primaryRes) === g.resKey);
+    if (groupActions.length === 0) return '';
+    const col = RESOURCES[g.resKey]?.color || 'var(--border2)';
+    const cards = groupActions.map(a => {
+      const rewards = computeRewards(a.cat, a.customRewards, a.id);
+      const freqMult = getFrequencyMultiplier(a.id);
+      const rewardBadges = Object.entries(rewards).map(([r,v]) => {
+        const res = RESOURCES[r];
+        return `<span class="chip-reward">+${v}${res.icon}</span>`;
+      }).join('');
+      const freqBadge = freqMult > 1
+        ? `<span class="chip-freq-badge boost" title="しばらくやっていないため報酬アップ中">↑UP</span>`
+        : freqMult < 1
+          ? `<span class="chip-freq-badge down" title="毎日続けているため報酬をやや抑制中">↓</span>`
+          : '';
+      return `<div class="chip" onclick="quickLogById('${a.id}')" style="border-color:${col}">
+        <div class="chip-top">
+          <span class="chip-icon">${a.icon}</span>
+          <span class="chip-label">${a.label}</span>
+          ${freqBadge}
+        </div>
+        <div class="chip-rewards">${rewardBadges}</div>
+      </div>`;
+    }).join('');
+    return `<div class="chip-group">
+      <div class="chip-group-label" style="color:${col}">${g.label}</div>
+      <div class="chip-group-items">${cards}</div>
+    </div>`;
+  }).join('');
+
+  // energy conversion：研究解放前は存在自体を隠す
+  const ecSection = document.getElementById('energy-conv-section');
+  if (ecSection) {
+    ecSection.style.display = G.researched.includes('energy_basics') ? 'block' : 'none';
+  }
+  const ecGrid = document.getElementById('energy-conv-grid');
+  if (ecGrid && G.researched.includes('energy_basics')) {
+    const curEnergy = Math.floor(G.resources.energy || 0);
+    const ecGroups = [
+      { resKey: 'vitality', convs: ENERGY_CONVERSIONS.filter(c => 'vitality' in c.gain && Object.keys(c.gain).length === 1) },
+      { resKey: 'wellness', convs: ENERGY_CONVERSIONS.filter(c => 'wellness' in c.gain && Object.keys(c.gain).length === 1) },
+      { resKey: 'growth',   convs: ENERGY_CONVERSIONS.filter(c => 'growth'   in c.gain && Object.keys(c.gain).length === 1) },
+      { resKey: 'mindset',  convs: ENERGY_CONVERSIONS.filter(c => 'mindset'  in c.gain && Object.keys(c.gain).length === 1) },
+      { resKey: 'life',     convs: ENERGY_CONVERSIONS.filter(c => 'life'     in c.gain && Object.keys(c.gain).length === 1) },
+      { resKey: 'all',      convs: ENERGY_CONVERSIONS.filter(c => Object.keys(c.gain).length > 1) },
+    ];
+    ecGrid.innerHTML = ecGroups.map(g => {
+      if (g.convs.length === 0) return '';
+      const col = g.resKey === 'all' ? 'var(--text2)' : (RESOURCES[g.resKey]?.color || 'var(--border2)');
+      const label = g.resKey === 'all' ? '✨ 全資源' : `${RESOURCES[g.resKey]?.icon||''}${RESOURCES[g.resKey]?.name||''}`;
+      const cards = g.convs.map(c => {
+        const affordable = curEnergy >= c.cost;
+        const gainBadges = Object.entries(c.gain).map(([r,v]) => {
+          const res = RESOURCES[r];
+          return `<span class="chip-reward" style="color:${res.color}">+${v}${res.icon}</span>`;
+        }).join('');
+        return `<div class="energy-conv-card ${affordable?'':'disabled'}" onclick="${affordable ? `convertEnergy('${c.id}')` : ''}" style="border-color:${col}">
+          <div class="energy-conv-top">
+            <span style="font-size:16px">${c.icon}</span>
+            <span class="energy-conv-name">${c.name}</span>
+          </div>
+          <div class="energy-conv-cost">⚡${c.cost} 消費</div>
+          <div class="energy-conv-gain">${gainBadges}</div>
+        </div>`;
+      }).join('');
+      return `<div class="chip-group">
+        <div class="chip-group-label" style="color:${col}">${label}</div>
+        <div class="chip-group-items">${cards}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // log list
+  document.getElementById('log-count').textContent = G.todayLog.length;
+  const list = document.getElementById('log-list');
+  const sysLogs = (G.systemLogs || []).map(s =>
+    `<div class="log-item" style="border-color:var(--accent);background:var(--accent-dim)">
+      <div class="log-item-left">
+        <span class="log-item-icon">📢</span>
+        <div>
+          <div class="log-item-name" style="color:var(--accent)">${s.msg}</div>
+          <div class="log-item-cat">${s.time}</div>
+        </div>
+      </div>
+    </div>`
+  ).join('');
+
+  if (G.todayLog.length === 0 && !sysLogs) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px;text-align:center">まだ記録がありません。<br>行動を記録して資源を集めましょう！</div>';
+    return;
+  }
+  list.innerHTML = sysLogs + G.todayLog.map((item, i) => {
+    const ci = CATEGORY_INFO[item.cat] || { icon: '📝', label: '記録' };
+    const rewardBadges = Object.entries(item.rewards).map(([r,v]) => {
+      const res = RESOURCES[r];
+      return `<span class="reward-badge" style="background:${res.color}22;color:${res.color}">+${v}${res.icon}</span>`;
+    }).join('');
+    return `<div class="log-item">
+      <div class="log-item-left">
+        <span class="log-item-icon">${ci.icon}</span>
+        <div>
+          <div class="log-item-name">${item.text}</div>
+          <div class="log-item-cat">${ci.label} · ${item.time}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <div class="log-item-reward">${rewardBadges}</div>
+        <button class="log-del" onclick="deleteLogItem(${i})" title="削除" aria-label="削除">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 表示順の優先度：完了 → アンロック済み → アンロック未 → 未発見（管理者モードのみ）
+function statusSortOrder(status) {
+  switch (status) {
+    case 'done': return 0;
+    case 'unlocked': return 1;
+    case 'locked': return 2;
+    case 'hidden': return 3;
+    default: return 4;
+  }
+}
+
+// 道具の枠色を決定する（カテゴリ強化系→毎日ボーナス系→上限拡張系の順で判定）
+function getBuildingBorderColor(b) {
+  if (b.effect) {
+    const cat = Object.keys(CATEGORY_INFO).find(c => b.effect(c));
+    if (cat) return getCatColor(cat);
+  }
+  if (b.energyBoost) return RESOURCES.energy.color;
+  if (b.passiveBonus) {
+    const sample = b.passiveBonus(1);
+    const key = Object.keys(sample)[0];
+    if (key && RESOURCES[key]) return RESOURCES[key].color;
+  }
+  if (b.capBonus) {
+    const key = Object.keys(b.capBonus)[0];
+    if (key && RESOURCES[key]) return RESOURCES[key].color;
+  }
+  return 'var(--border2)';
+}
+
+function renderBuildingsPanel() {
+  const grid = document.getElementById('building-grid');
+  if (!grid) return;
+  const sortedBuildings = [...BUILDINGS].sort((a, b) =>
+    statusSortOrder(getBuildingStatus(a)) - statusSortOrder(getBuildingStatus(b))
+  );
+  const cards = sortedBuildings.map(b => {
+    const status = getBuildingStatus(b);
+    if (!adminMode && status === 'hidden') return '';
+
+    const lv = G.buildings[b.id] || 0;
+    const nextLv = lv + 1;
+    const cost = buildingCostAtLevel(b, nextLv);
+    const affordable = canAfford(cost);
+    const borderCol = getBuildingBorderColor(b);
+
+    const costHTML = Object.entries(cost).map(([r,v]) => {
+      const res = RESOURCES[r];
+      const hasIt = (G.resources[r]||0) >= v;
+      return `<span class="cost-badge" style="color:${hasIt ? 'var(--text)' : 'var(--coral)'}">${res.icon}${v}</span>`;
+    }).join('');
+
+    const effectDesc = lv > 0 ? `現在効果: Lv${lv}` : '';
+
+    // 前提表示
+    let prereqHint = '';
+    if (status === 'locked' || status === 'hidden') {
+      const req = b.unlockRequires || { buildings: [], research: [] };
+      const parts = [];
+      (req.buildings||[]).forEach(id => {
+        const pb = BUILDINGS.find(x => x.id === id);
+        if (pb && (G.buildings[id]||0) === 0) parts.push(`道具「${pb.name}」`);
+      });
+      (req.research||[]).forEach(id => {
+        const pr = RESEARCH.find(x => x.id === id);
+        if (pr && !G.researched.includes(id)) parts.push(`研究「${pr.name}」`);
+      });
+      prereqHint = parts.join('、') + ' が必要';
+    }
+
+    const isLocked = status === 'locked' || status === 'hidden';
+    const statusBadge = adminMode && status === 'hidden'
+      ? `<span style="font-size:9px;color:var(--coral);background:var(--coral-dim);padding:1px 5px;border-radius:8px;margin-left:4px">未発見</span>` : '';
+
+    return `<div class="building-card ${isLocked?'locked':''}" style="${!isLocked ? `border-color:${borderCol}` : ''}">
+      <div style="font-size:24px;margin-bottom:4px">${b.icon}</div>
+      <div class="building-name">${b.name}${statusBadge}</div>
+      ${b.flavor ? `<div style="font-size:9px;color:var(--text3);font-style:italic;margin-bottom:4px">${b.flavor}</div>` : ''}
+      <div class="building-desc">${b.desc}</div>
+      <div class="building-level">${isLocked ? `🔒 ${prereqHint}` : `Lv ${lv}`}</div>
+      ${!isLocked ? `<div class="building-cost">${costHTML}</div>` : ''}
+      ${!isLocked ? `<button class="btn-build" onclick="buildOrUpgrade('${b.id}')" ${!affordable ? 'disabled' : ''}>
+        ${lv === 0 ? '入手する' : `アップグレード → Lv${nextLv}`}
+      </button>` : ''}
+      ${effectDesc ? `<div class="building-effect">${effectDesc}</div>` : ''}
+    </div>`;
+  }).join('');
+  grid.innerHTML = cards || '<div style="color:var(--text3);font-size:12px;padding:12px">まだ道具を入手できません。行動を記録して資源を集めましょう！</div>';
+}
+
+function renderResearchPanel() {
+  const grid = document.getElementById('research-grid');
+  if (!grid) return;
+  const sortedResearch = [...RESEARCH].sort((a, b) =>
+    statusSortOrder(getResearchStatus(a)) - statusSortOrder(getResearchStatus(b))
+  );
+  const cards = sortedResearch.map(r => {
+    const status = getResearchStatus(r);
+    if (!adminMode && status === 'hidden') return '';
+    const done = G.researched.includes(r.id);
+    if (done && hideDoneResearch) return ''; // 習得済み非表示設定（管理者モードでも適用）
+    const affordable = canAfford(r.cost);
+    const isLocked = status === 'locked' || status === 'hidden';
+
+    // 枠線色：研究のコスト主資源から
+    const mainCostKey = Object.keys(r.cost)[0];
+    const borderCol = mainCostKey ? (RESOURCES[mainCostKey]?.color || 'var(--purple)') : 'var(--purple)';
+
+    const costHTML = Object.entries(r.cost).map(([res, val]) => {
+      const ri = RESOURCES[res];
+      const has = (G.resources[res]||0) >= val;
+      return `<span class="cost-badge" style="color:${has ? 'var(--text)' : 'var(--coral)'}">${ri.icon}${val}</span>`;
+    }).join('');
+
+    let prereqHint = '';
+    if (isLocked && !done) {
+      const req = r.unlockRequires || { buildings: [], research: [] };
+      const parts = [];
+      (req.buildings||[]).forEach(id => {
+        const pb = BUILDINGS.find(x => x.id === id);
+        if (pb && (G.buildings[id]||0) === 0) parts.push(`道具「${pb.name}」`);
+      });
+      (req.research||[]).forEach(id => {
+        const pr = RESEARCH.find(x => x.id === id);
+        if (pr && !G.researched.includes(id)) parts.push(`研究「${pr.name}」`);
+      });
+      prereqHint = parts.join('、') + ' が必要';
+    }
+
+    const statusBadge = adminMode && status === 'hidden'
+      ? `<span style="font-size:9px;color:var(--coral);background:var(--coral-dim);padding:1px 5px;border-radius:8px;margin-left:4px">未発見</span>` : '';
+
+    return `<div class="research-card ${done?'done':''} ${isLocked&&!done?'locked':''}" style="${!done && !isLocked ? `border-color:${borderCol}` : ''}">
+      <div style="font-size:24px;margin-bottom:4px">${r.icon}</div>
+      <div class="research-name">${r.name}${statusBadge}</div>
+      ${r.flavor ? `<div style="font-size:9px;color:var(--text3);font-style:italic;margin-bottom:4px">${r.flavor}</div>` : ''}
+      <div class="research-desc">${r.desc}</div>
+      <div class="research-effect">${done ? '✓ 習得済み' : isLocked ? `🔒 ${prereqHint}` : '効果: ' + r.desc}</div>
+      ${!done && !isLocked ? `<div class="building-cost" style="margin-bottom:6px">${costHTML}</div>` : ''}
+      <button class="btn-research ${done?'done-btn':''}"
+        onclick="doResearch('${r.id}')"
+        ${done || isLocked || !affordable ? 'disabled' : ''}>
+        ${done ? '✓ 習得済み' : isLocked ? '🔒 ロック中' : '研究する'}
+      </button>
+    </div>`;
+  }).join('');
+  grid.innerHTML = cards || '<div style="color:var(--text3);font-size:12px;padding:12px">まだ研究を開始できません。道具を揃えるところから始めましょう！</div>';
+}
+
+function renderStatsPanel() {
+  const sg = document.getElementById('stats-grid');
+  if (!sg) return;
+
+  const uniqueTools = Object.values(G.buildings).filter(lv => lv > 0).length;
+
+  const stats = [
+    { icon: '📅', val: `Day ${G.day}`, label: formatDateJP(getDateForDay(G.day)) || '開始日', color: 'var(--accent)' },
+    { icon: '⭐', val: `Lv.${G.level}`, label: `${G.xp}/${G.xpToNext} XP`, color: 'var(--gold)' },
+    { icon: '🔥', val: G.stats.totalActions, label: '総行動回数', color: 'var(--green)' },
+    { icon: '🔬', val: `${G.stats.totalResearched}/${RESEARCH.length}`, label: '研究完了', color: 'var(--purple)' },
+    { icon: '🔧', val: `${uniqueTools}/${BUILDINGS.length}`, label: '道具の種類', color: 'var(--teal)' },
+    { icon: '🏅', val: `${G.achievements.length}/${ACHIEVEMENTS.length}`, label: '実績解除', color: 'var(--gold)' },
+    { icon: '⚡', val: G.stats.totalEnergySpent || 0, label: 'エナジー消費', color: 'var(--gold)' },
+  ];
+
+  sg.innerHTML = stats.map(s =>
+    `<div class="stat-card">
+      <span class="stat-icon">${s.icon}</span>
+      <div>
+        <div class="stat-val" style="color:${s.color}">${s.val}</div>
+        <div class="stat-label">${s.label}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  const ag = document.getElementById('ach-grid');
+  if (ag) {
+    ag.innerHTML = ACHIEVEMENTS.map(a => {
+      const unlocked = G.achievements.includes(a.id);
+      const showDesc = unlocked || adminMode;
+      return `<div class="ach-item ${unlocked?'unlocked':''}">
+        <span class="ach-icon" style="${unlocked ? '' : 'filter:grayscale(1) opacity(0.35)'}">${a.icon}</span>
+        <div style="flex:1">
+          <div class="ach-name" style="${unlocked ? 'color:var(--gold)' : ''}">${a.name}</div>
+          <div class="ach-desc">${showDesc ? a.desc : '— 達成すると条件が解放されます'}</div>
+        </div>
+        ${unlocked ? `<span style="font-size:10px;color:var(--gold);flex-shrink:0;padding-left:8px">✓</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+}
+
+function getCatColor(cat) {
+  const map = {
+    health: 'var(--cat-health)',
+    food: 'var(--cat-food)',
+    hygiene: 'var(--cat-hygiene)',
+    rest: 'var(--cat-rest)',
+    mind: 'var(--cat-mind)',
+    creative: 'var(--cat-creative)',
+    house: 'var(--cat-house)',
+    positivity: 'var(--cat-positivity)',
+  };
+  return map[cat] || 'var(--border2)';
+}
+
+function getDateForDay(dayNum) {
+  if (!G.startDate) return null;
+  const d = new Date(G.startDate + 'T00:00:00');
+  d.setDate(d.getDate() + (dayNum - 1));
+  return d;
+}
+
+function formatDateJP(d) {
+  if (!d) return '';
+  const weekdays = ['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
+
+function renderHistoryPanel() {
+  const hl = document.getElementById('history-list');
+  if (!hl) return;
+  if (G.history.length === 0) {
+    hl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px;text-align:center">まだ履歴がありません</div>';
+    return;
+  }
+  hl.innerHTML = G.history.slice(0, 30).map((h, hIdx) => {
+    const isLatest = hIdx === 0; // 最新日（＝あとから追加できる「昨日」）のみ削除可能
+    const actions = h.log.map((item, itemIdx) => {
+      const ci = CATEGORY_INFO[item.cat];
+      const rewardStr = Object.entries(item.rewards).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+      const delBtn = isLatest
+        ? `<button class="log-del" onclick="deleteYesterdayLogItem(${itemIdx})" title="削除" aria-label="削除">✕</button>`
+        : '';
+      return `<div class="history-action-row">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ci.icon} ${item.text}</span>
+        <span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:6px">
+          <span style="color:var(--text2)">${rewardStr}</span>
+          ${delBtn}
+        </span>
+      </div>`;
+    }).join('');
+
+    const totalActs = h.log.length;
+    const passStr = h.passive ? Object.entries(h.passive).filter(([,v])=>v>0).map(([r,v])=>
+      `+${v}${RESOURCES[r]?.icon||r}`).join(' ') : '';
+    const dateStr = formatDateJP(getDateForDay(h.day));
+
+    return `<div class="history-day">
+      <div class="history-day-header">
+        <span class="history-day-title">Day ${h.day}<span style="color:var(--text3);font-weight:400;margin-left:6px">${dateStr}</span> — ${totalActs}件の行動</span>
+        ${passStr ? `<span style="font-size:10px;color:var(--teal)">${passStr}（建物）</span>` : ''}
+      </div>
+      ${actions ? `<div class="history-day-body">${actions}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RESOURCES PANEL
+// ============================================================
+
+function renderResourcesPanel() {
+  const rd = document.getElementById('resources-detail');
+  if (!rd) return;
+  rd.innerHTML = Object.entries(RESOURCES).map(([key, res]) => {
+    const val = Math.floor(G.resources[key] || 0);
+    const cap = G.caps[key] || 100;
+    const pct = Math.round(val / cap * 100);
+    const totalGained = G.stats.totalGained[key] || 0;
+    return `<div class="res-detail-row">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">${res.icon}</span>
+        <div>
+          <div style="font-weight:600">${res.name}</div>
+          <div style="font-size:10px;color:var(--text3)">累計獲得: ${totalGained}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div>
+          <div style="text-align:right;font-weight:700;color:${res.color}">${val}<span style="font-size:10px;color:var(--text3)">/${cap}</span></div>
+          <div class="res-mini-bar-wrap">
+            <div class="res-mini-bar" style="width:${pct}%;background:${res.color}"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const rf = document.getElementById('resources-forecast');
+  if (!rf) return;
+  // 平均報酬計算（過去3日分）
+  const recent = G.history.slice(0, 3);
+  if (recent.length === 0) {
+    rf.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px">まだ履歴がありません</div>';
+    return;
+  }
+  const avgGain = {};
+  for (const day of recent) {
+    for (const entry of day.log) {
+      for (const [res, val] of Object.entries(entry.rewards)) {
+        avgGain[res] = (avgGain[res] || 0) + val;
+      }
+    }
+  }
+  rf.innerHTML = `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">直近${recent.length}日の平均（1日あたり）</div>` +
+    Object.entries(avgGain).map(([key, total]) => {
+      const res = RESOURCES[key];
+      const avg = (total / recent.length).toFixed(1);
+      return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px">
+        <span>${res.icon} ${res.name}</span>
+        <span style="color:${res.color};font-weight:600">+${avg}/日</span>
+      </div>`;
+    }).join('');
+}
+
+// ============================================================
+// EXPORT / IMPORT / RESET
+// ============================================================
+
+function exportData() {
+  const json = JSON.stringify(G, null, 2);
+  try {
+    navigator.clipboard.writeText(json).then(() => {
+      toast('📋 データをクリップボードにコピーしました', true);
+    }).catch(() => showExportFallback(json));
+  } catch(e) {
+    showExportFallback(json);
+  }
+}
+
+function showExportFallback(json) {
+  const area = document.createElement('textarea');
+  area.value = json;
+  area.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;height:200px;z-index:9999;background:var(--surface3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:11px';
+  document.body.appendChild(area);
+  area.select();
+  const close = document.createElement('button');
+  close.textContent = '閉じる';
+  close.style.cssText = 'position:fixed;top:220px;right:10px;z-index:9999;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer';
+  close.onclick = () => { area.remove(); close.remove(); };
+  document.body.appendChild(close);
+  toast('テキストをコピーして保存してください', true);
+}
+
+function sanitizeState(state) {
+  // 旧資源キーを除去して新キーに移行
+  const oldKeys = ['coin', 'focus', 'harmony', 'wisdom'];
+  // resources
+  if (state.resources) {
+    // 旧vitality→新vitalityはそのまま保持
+    oldKeys.forEach(k => delete state.resources[k]);
+    // 新資源が未定義なら0で初期化
+    ['vitality','wellness','growth','mindset','life','energy'].forEach(k => {
+      if (state.resources[k] === undefined) state.resources[k] = 0;
+    });
+  }
+  // caps
+  if (state.caps) {
+    oldKeys.forEach(k => delete state.caps[k]);
+    ['vitality','wellness','growth','mindset','life','energy'].forEach(k => {
+      if (state.caps[k] === undefined) state.caps[k] = 100;
+    });
+  }
+  // totalGained
+  if (state.stats && state.stats.totalGained) {
+    oldKeys.forEach(k => delete state.stats.totalGained[k]);
+    ['vitality','wellness','growth','mindset','life','energy'].forEach(k => {
+      if (state.stats.totalGained[k] === undefined) state.stats.totalGained[k] = 0;
+    });
+  }
+  if (state.stats && state.stats.catCount) {
+    delete state.stats.catCount.work;
+    delete state.stats.catCount.finance;
+    delete state.stats.catCount.social;
+  }
+  if (state.stats && state.stats.totalEnergySpent === undefined) state.stats.totalEnergySpent = 0;
+  if (state.buildings) {
+    delete state.buildings.workshop;
+    delete state.buildings.treasury;
+  }
+  if (state.researched) {
+    state.researched = state.researched.filter(id =>
+      !['productivity', 'financial_wisdom'].includes(id));
+  }
+  if (state.todayLog) {
+    state.todayLog = state.todayLog.filter(l =>
+      l.cat !== 'work' && l.cat !== 'finance' && l.cat !== 'social');
+  }
+  if (state.history) {
+    state.history.forEach(h => {
+      if (h.log) h.log = h.log.filter(l =>
+        l.cat !== 'work' && l.cat !== 'finance' && l.cat !== 'social');
+    });
+  }
+  if (!state.startDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - ((state.day || 1) - 1));
+    state.startDate = getLocalDateString(d);
+  }
+  // 旧セーブデータにquickActionsが無ければ、初期セットを補完する
+  if (!Array.isArray(state.quickActions) || state.quickActions.length === 0) {
+    state.quickActions = seedQuickActions();
+  }
+  if (!state.nextQuickActionNum) {
+    state.nextQuickActionNum = DEFAULT_QUICK_ACTIONS.length + 1;
+  }
+  if (state.dailyGoalClaimedDate === undefined) state.dailyGoalClaimedDate = null;
+  // 旧セーブデータは既に行動記録があるはずなので解禁済み扱いにする
+  if (state.hasLoggedFirstAction === undefined) {
+    state.hasLoggedFirstAction = (state.stats && state.stats.totalActions > 0) || (state.day > 1);
+  }
+  // 既存のセーブデータが読み込めている時点で新規プレイヤーではないため、チュートリアル済み扱いにする
+  if (state.tutorialDone === undefined) state.tutorialDone = true;
+  if (!Array.isArray(state.longTermGoals)) state.longTermGoals = [];
+  if (!state.nextLongTermGoalNum) state.nextLongTermGoalNum = 1;
+  if (state.ironWillMode === undefined) state.ironWillMode = false;
+  return state;
+}
+
+function importData() {
+  const input = prompt('バックアップしたJSONデータを貼り付けてください:');
+  if (!input) return;
+  try {
+    let parsed = JSON.parse(input);
+    if (parsed.day && parsed.resources && parsed.stats) {
+      parsed = sanitizeState(parsed);
+      if (confirm(`Day ${parsed.day}、レベル${parsed.level}のデータをインポートします。現在のデータは上書きされます。よろしいですか？`)) {
+        G = parsed;
+        saveState();
+        render();
+        toast('✓ インポート完了！', true);
+      }
+    } else {
+      alert('データの形式が正しくありません');
+    }
+  } catch(e) {
+    alert('JSONの解析に失敗しました: ' + e.message);
+  }
+}
+
+function confirmReset() {
+  if (confirm('本当にリセットしますか？すべてのデータが消えます。')) {
+    if (confirm('最終確認: リセット後は元に戻せません。実行しますか？')) {
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(BACKUP_KEY);
+      G = DEFAULT_STATE();
+      saveState();
+      render();
+      toast('ゲームをリセットしました', false);
+    }
+  }
+}
+
+// ============================================================
+// クイック記録の管理（追加・編集・削除）
+// ============================================================
+
+// 一覧モーダル（設定タブの「達成項目の編集」から開く）
+function openQuickActionListModal() {
+  const root = document.getElementById('qa-editor-root');
+  const rows = (G.quickActions && G.quickActions.length > 0)
+    ? G.quickActions.map(a => {
+        const ci = CATEGORY_INFO[a.cat] || { label: '?' };
+        return `<div class="qa-manage-row">
+          <span class="qa-manage-icon">${a.icon}</span>
+          <div class="qa-manage-info">
+            <div class="qa-manage-label">${a.label}</div>
+            <div class="qa-manage-cat">${ci.label}</div>
+          </div>
+          <button class="qa-manage-btn" onclick="openQuickActionEditor('${a.id}')" title="編集">✎</button>
+          <button class="qa-manage-btn danger" onclick="deleteQuickAction('${a.id}')" title="削除">✕</button>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text3);font-size:12px;padding:8px 0">クイック記録がありません。下のボタンから追加できます。</div>';
+
+  root.innerHTML = `
+    <div class="modal-backdrop" id="qa-editor-backdrop" onclick="if(event.target===this) closeQuickActionEditor()">
+      <div class="modal-sheet" style="max-height:78vh;overflow-y:auto">
+        <div class="modal-handle"></div>
+        <div class="modal-title">クイック記録の管理</div>
+        <div id="qa-manage-list">${rows}</div>
+        <button class="modal-btn primary" onclick="openQuickActionEditor(null)">＋ 新しく追加</button>
+        <button class="modal-btn" onclick="closeQuickActionEditor()">閉じる</button>
+      </div>
+    </div>`;
+}
+
+// 追加・編集フォーム（一覧モーダルの上から開く。保存/削除後は一覧モーダルに戻る）
+function openQuickActionEditor(id) {
+  const editing = id ? G.quickActions.find(a => a.id === id) : null;
+  const catOptions = Object.entries(CATEGORY_INFO).map(([key, ci]) =>
+    `<option value="${key}" ${editing && editing.cat === key ? 'selected' : ''}>${ci.icon} ${ci.label}</option>`
+  ).join('');
+
+  const rewards = (editing && editing.customRewards) || {};
+  const resInputs = Object.entries(RESOURCES).map(([key, res]) => {
+    const val = rewards[key] || '';
+    return `<div class="qa-reward-input">
+      <span>${res.icon}</span>
+      <input type="number" min="0" max="99" id="qa-reward-${key}" value="${val}" placeholder="0">
+    </div>`;
+  }).join('');
+
+  const root = document.getElementById('qa-editor-root');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="qa-editor-backdrop" onclick="if(event.target===this) openQuickActionListModal()">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">${editing ? 'クイック記録を編集' : 'クイック記録を追加'}</div>
+
+        <div class="qa-form-row">
+          <label class="qa-form-label">カテゴリ</label>
+          <select id="qa-form-cat">${catOptions}</select>
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">ラベル（表示名）</label>
+          <input type="text" id="qa-form-label" maxlength="20" value="${editing ? editing.label.replace(/"/g,'&quot;') : ''}" placeholder="例：ストレッチ">
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">アイコン（絵文字1つ）</label>
+          <input type="text" id="qa-form-icon" maxlength="4" value="${editing ? editing.icon : ''}" placeholder="例：🧘">
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">固定報酬（空欄=カテゴリの標準報酬を使う）</label>
+          <div class="qa-reward-grid">${resInputs}</div>
+        </div>
+
+        <button class="modal-btn primary" onclick="saveQuickActionFromEditor(${editing ? `'${id}'` : 'null'})">保存する</button>
+        ${editing ? `<button class="modal-btn danger" onclick="deleteQuickAction('${id}')">このクイック記録を削除</button>` : ''}
+        <button class="modal-btn" onclick="openQuickActionListModal()">戻る</button>
+      </div>
+    </div>`;
+}
+
+function closeQuickActionEditor() {
+  document.getElementById('qa-editor-root').innerHTML = '';
+}
+
+function saveQuickActionFromEditor(id) {
+  const cat = document.getElementById('qa-form-cat').value;
+  const label = document.getElementById('qa-form-label').value.trim();
+  const icon = document.getElementById('qa-form-icon').value.trim();
+
+  if (!label) { toast('ラベルを入力してください', false); return; }
+  if (!icon) { toast('アイコンを入力してください', false); return; }
+
+  const customRewards = {};
+  Object.keys(RESOURCES).forEach(key => {
+    const input = document.getElementById(`qa-reward-${key}`);
+    const val = parseInt(input.value, 10);
+    if (val > 0) customRewards[key] = val;
+  });
+  const hasCustomRewards = Object.keys(customRewards).length > 0;
+
+  if (id) {
+    // 既存項目の編集
+    const a = G.quickActions.find(x => x.id === id);
+    if (a) {
+      a.cat = cat;
+      a.label = label;
+      a.icon = icon;
+      a.primaryRes = CATEGORY_INFO[cat]?.primaryRes;
+      if (hasCustomRewards) a.customRewards = customRewards;
+      else delete a.customRewards;
+    }
+    toast('✓ 更新しました', true);
+  } else {
+    // 新規追加
+    const newId = `qa_custom_${G.nextQuickActionNum++}`;
+    const newAction = { id: newId, cat, label, icon, primaryRes: CATEGORY_INFO[cat]?.primaryRes };
+    if (hasCustomRewards) newAction.customRewards = customRewards;
+    G.quickActions.push(newAction);
+    toast('✓ 追加しました', true);
+  }
+
+  saveState();
+  render();
+  openQuickActionListModal(); // 保存後は一覧モーダルに戻る
+}
+
+function deleteQuickAction(id) {
+  const a = G.quickActions.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`「${a.label}」を削除しますか？`)) return;
+  G.quickActions = G.quickActions.filter(x => x.id !== id);
+  saveState();
+  render();
+  toast('削除しました', false);
+  openQuickActionListModal(); // 削除後も一覧モーダルに戻る
+}
+
+// ============================================================
+// 長期目標
+// ============================================================
+
+const LT_MILESTONES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+// 各マイルストーン到達時のボーナス（primary=カテゴリ主資源、energyは任意）
+const LT_MILESTONE_REWARDS = {
+  10:  { primary: 4 },
+  20:  { primary: 4 },
+  30:  { primary: 6 },
+  40:  { primary: 6 },
+  50:  { primary: 8, energy: 5 },
+  60:  { primary: 8 },
+  70:  { primary: 10 },
+  80:  { primary: 10 },
+  90:  { primary: 12 },
+  100: { primary: 20, energy: 15 },
+};
+
+function renderLongTermPanel() {
+  renderLongTermCalendar();
+  renderLongTermGoals();
+}
+
+// 全長期目標の進捗ログを合算して「進捗があった日」の集合を作る
+function getAllLongTermProgressDates() {
+  const dates = new Set();
+  (G.longTermGoals || []).forEach(g => {
+    Object.keys(g.progressLog || {}).forEach(d => dates.add(d));
+  });
+  return dates;
+}
+
+function renderLongTermCalendar() {
+  const el = document.getElementById('longterm-calendar');
+  if (!el) return;
+  if (!G.researched.includes('long_term_view')) { el.innerHTML = ''; return; }
+
+  const today = new Date();
+  const todayStr = getLocalDateString();
+
+  // 今週の月曜日を求める（日曜=0なので6日前、それ以外はdow-1日前）
+  const dow = today.getDay();
+  const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+  const thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() - daysSinceMonday);
+
+  // 3週間前の月曜から開始（＝合計4週間分を表示）
+  const startMonday = new Date(thisMonday);
+  startMonday.setDate(thisMonday.getDate() - 21);
+
+  const progressDates = getAllLongTermProgressDates();
+  const weekdayLabels = ['月','火','水','木','金','土','日'];
+
+  let html = '<div class="lt-calendar-weekdays">' + weekdayLabels.map(d => `<div>${d}</div>`).join('') + '</div>';
+  for (let week = 0; week < 4; week++) {
+    html += '<div class="lt-calendar-row">';
+    for (let day = 0; day < 7; day++) {
+      const cellDate = new Date(startMonday);
+      cellDate.setDate(startMonday.getDate() + week * 7 + day);
+      const cellDateStr = getLocalDateString(cellDate);
+      const hasProgress = progressDates.has(cellDateStr);
+      const isToday = cellDateStr === todayStr;
+      const isFuture = cellDate > today;
+      html += `<div class="lt-calendar-cell ${hasProgress?'has-progress':''} ${isToday?'today':''} ${isFuture?'future':''}">
+        <span class="lt-cell-date">${cellDate.getDate()}</span>
+        ${hasProgress ? '<span class="lt-cell-mark">🌱</span>' : ''}
+      </div>`;
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderLongTermGoals() {
+  const el = document.getElementById('longterm-goals-list');
+  if (!el) return;
+  if (!G.researched.includes('long_term_view')) { el.innerHTML = ''; return; }
+
+  if (!G.longTermGoals || G.longTermGoals.length === 0) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0">まだ長期目標がありません。下のボタンから追加しましょう。</div>';
+    return;
+  }
+
+  const today = getLocalDateString();
+  el.innerHTML = G.longTermGoals.map(g => {
+    const pct = g.totalUnits > 0 ? Math.min(100, (g.currentUnits / g.totalUnits) * 100) : 0;
+    const pctStr = pct.toFixed(1);
+    const doneToday = !!(g.progressLog && g.progressLog[today]);
+    const ci = CATEGORY_INFO[g.cat] || { icon: '🎯', label: '' };
+    const col = getCatColor(g.cat);
+
+    const milestoneChips = LT_MILESTONES.map(m => {
+      const reached = (g.lastBonusMilestone || 0) >= m;
+      return `<div class="lt-milestone-chip ${reached?'reached':''}">${m}%</div>`;
+    }).join('');
+
+    return `<div class="lt-goal-card" style="border-color:${col}">
+      <div class="lt-goal-header">
+        <span class="lt-goal-icon">${ci.icon}</span>
+        <div class="lt-goal-title">${g.title}</div>
+        <button class="qa-manage-btn" onclick="openLongTermGoalEditor('${g.id}')" title="編集">✎</button>
+      </div>
+      <div class="lt-goal-progress-bar-wrap">
+        <div class="lt-goal-progress-bar" style="width:${pct}%;background:${col}"></div>
+      </div>
+      <div class="lt-goal-progress-text">${g.currentUnits} / ${g.totalUnits} ${g.unit}　(${pctStr}%)</div>
+      <div class="lt-goal-milestones">${milestoneChips}</div>
+      ${doneToday ? '<div class="lt-goal-done-badge">✓ 今日の分は記録済み（追加の記録も可能）</div>' : ''}
+      <button class="modal-btn primary" onclick="openProgressInput('${g.id}')">
+        ${doneToday ? '進捗を追加で記録する' : '進捗を記録する'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function openLongTermGoalEditor(id) {
+  const editing = id ? G.longTermGoals.find(g => g.id === id) : null;
+  const catOptions = Object.entries(CATEGORY_INFO).map(([key, ci]) =>
+    `<option value="${key}" ${editing && editing.cat === key ? 'selected' : ''}>${ci.icon} ${ci.label}</option>`
+  ).join('');
+
+  const root = document.getElementById('qa-editor-root');
+  root.innerHTML = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeQuickActionEditor()">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">${editing ? '長期目標を編集' : '長期目標を追加'}</div>
+
+        <div class="qa-form-row">
+          <label class="qa-form-label">タイトル</label>
+          <input type="text" id="lt-form-title" maxlength="30" value="${editing ? editing.title.replace(/"/g,'&quot;') : ''}" placeholder="例：英語の本を読む">
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">カテゴリ（達成ボーナスの種類に影響）</label>
+          <select id="lt-form-cat">${catOptions}</select>
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">総数（目標のページ数・回数など）</label>
+          <input type="number" id="lt-form-total" min="1" value="${editing ? editing.totalUnits : ''}" placeholder="例：300">
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">単位</label>
+          <input type="text" id="lt-form-unit" maxlength="10" value="${editing ? editing.unit : ''}" placeholder="例：ページ">
+        </div>
+
+        <button class="modal-btn primary" onclick="saveLongTermGoal(${editing ? `'${id}'` : 'null'})">保存する</button>
+        ${editing ? `<button class="modal-btn danger" onclick="deleteLongTermGoal('${id}')">この目標を削除</button>` : ''}
+        <button class="modal-btn" onclick="closeQuickActionEditor()">キャンセル</button>
+      </div>
+    </div>`;
+}
+
+function saveLongTermGoal(id) {
+  const title = document.getElementById('lt-form-title').value.trim();
+  const cat = document.getElementById('lt-form-cat').value;
+  const total = parseFloat(document.getElementById('lt-form-total').value);
+  const unit = document.getElementById('lt-form-unit').value.trim() || '単位';
+
+  if (!title) { toast('タイトルを入力してください', false); return; }
+  if (!total || total <= 0) { toast('総数を正しく入力してください', false); return; }
+
+  if (id) {
+    const g = G.longTermGoals.find(x => x.id === id);
+    if (g) { g.title = title; g.cat = cat; g.totalUnits = total; g.unit = unit; }
+    toast('✓ 更新しました', true);
+  } else {
+    const newId = `lt_${G.nextLongTermGoalNum++}`;
+    G.longTermGoals.push({
+      id: newId, title, cat, totalUnits: total, unit,
+      currentUnits: 0, progressLog: {}, lastBonusMilestone: 0,
+      createdDate: getLocalDateString(),
+    });
+    G.stats.longTermGoalsCreated = (G.stats.longTermGoalsCreated || 0) + 1;
+    checkAchievements();
+    toast('✓ 追加しました', true);
+  }
+
+  saveState();
+  closeQuickActionEditor();
+  render();
+}
+
+function deleteLongTermGoal(id) {
+  const g = G.longTermGoals.find(x => x.id === id);
+  if (!g) return;
+  if (!confirm(`「${g.title}」を削除しますか？進捗の記録も失われます。`)) return;
+  G.longTermGoals = G.longTermGoals.filter(x => x.id !== id);
+  saveState();
+  closeQuickActionEditor();
+  render();
+  toast('削除しました', false);
+}
+
+function openProgressInput(goalId) {
+  const g = G.longTermGoals.find(x => x.id === goalId);
+  if (!g) return;
+  const input = prompt(`現在の達成数を入力してください（${g.unit}）\n目標：${g.totalUnits}${g.unit}`, g.currentUnits);
+  if (input === null) return;
+  const val = parseFloat(input);
+  if (isNaN(val) || val < 0) { toast('正しい数値を入力してください', false); return; }
+  updateLongTermGoalProgress(goalId, val);
+}
+
+function updateLongTermGoalProgress(goalId, newValue) {
+  const g = G.longTermGoals.find(x => x.id === goalId);
+  if (!g) return;
+
+  g.currentUnits = newValue;
+  const newPct = g.totalUnits > 0 ? (g.currentUnits / g.totalUnits) * 100 : 0;
+
+  const today = getLocalDateString();
+  if (!g.progressLog) g.progressLog = {};
+  const alreadyToday = !!g.progressLog[today];
+
+  let gainedEnergy = false;
+  if (!alreadyToday) {
+    g.progressLog[today] = true;
+    applyRewards({ energy: 1 });
+    gainedEnergy = true;
+  }
+
+  // マイルストーン判定（主資源＋一部エナジーのボーナス、10%刻み）
+  const primaryRes = CATEGORY_INFO[g.cat]?.primaryRes || 'growth';
+  let bonusMsgs = [];
+  LT_MILESTONES.forEach(m => {
+    if (newPct >= m && (g.lastBonusMilestone || 0) < m) {
+      g.lastBonusMilestone = m;
+      const reward = LT_MILESTONE_REWARDS[m] || { primary: 4 };
+      const bonus = { [primaryRes]: reward.primary };
+      if (reward.energy) bonus.energy = (bonus.energy || 0) + reward.energy;
+      applyRewards(bonus);
+      const bonusStr = Object.entries(bonus).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+      bonusMsgs.push(`🎉 ${m}%達成！ ${bonusStr}`);
+      addSystemLog(`🗺️ 長期目標「${g.title}」が${m}%に到達！ ${bonusStr}`);
+
+      if (m === 100) {
+        G.stats.longTermGoalsCompleted = (G.stats.longTermGoalsCompleted || 0) + 1;
+      }
+    }
+  });
+
+  checkAchievements();
+  saveState();
+  render();
+
+  if (bonusMsgs.length > 0) {
+    bonusMsgs.forEach((msg, i) => setTimeout(() => toast(msg, true), 300 + i * 900));
+  } else if (gainedEnergy) {
+    toast('進捗を記録しました +1⚡', true);
+  } else {
+    toast('進捗を更新しました', true);
+  }
+}
+
+// ============================================================
+// COMBO FLASH (複数カテゴリ達成)
+// ============================================================
+
+function checkCombo() {
+  const cats = new Set(G.todayLog.map(l => l.cat));
+  if (cats.size === 5) showCombo('5カテゴリ達成！🔥');
+  else if (cats.size === 7) showCombo('7カテゴリ！PERFECT💫');
+  else if (cats.size >= Object.keys(CATEGORY_INFO).length) showCombo('全カテゴリ制覇！👑');
+}
+
+function showCombo(msg) {
+  const el = document.createElement('div');
+  el.className = 'combo-flash';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+// デイリー目標のカテゴリで記録した場合、1日1回だけボーナスを付与
+function checkDailyGoal(cat) {
+  if (!G.researched.includes('daily_rhythm')) return; // 未解放なら機能自体を無効化
+  const goal = getTodayGoal();
+  if (!goal || goal.cat !== cat) return;
+  const today = getLocalDateString();
+  if (G.dailyGoalClaimedDate === today) return; // 今日はもう受け取り済み
+
+  G.dailyGoalClaimedDate = today;
+  applyRewards(goal.bonus);
+  const bonusStr = Object.entries(goal.bonus).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+  addSystemLog(`🎯 デイリー目標達成！「${goal.name}」→ ${bonusStr}`);
+  setTimeout(() => toast(`🎯 デイリー目標達成！ ${bonusStr}`, true), 500);
+}
+
+function renderDailyGoalCard() {
+  const el = document.getElementById('daily-goal-card');
+  if (!el) return;
+  if (!G.researched.includes('daily_rhythm')) { el.innerHTML = ''; return; } // 未解放なら存在自体を隠す
+  const goal = getTodayGoal();
+  if (!goal) { el.innerHTML = ''; return; }
+  const today = getLocalDateString();
+  const done = G.dailyGoalClaimedDate === today;
+  const bonusStr = Object.entries(goal.bonus).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+  el.innerHTML = `<div class="daily-goal-card ${done ? 'done' : ''}">
+    <span class="daily-goal-icon">${done ? '✅' : goal.icon}</span>
+    <div class="daily-goal-text">
+      <div class="daily-goal-name">${goal.name}${done ? '（達成済み）' : ''}</div>
+      <div class="daily-goal-desc">${done ? '今日の目標はクリアしました！' : goal.desc}</div>
+    </div>
+    <div class="daily-goal-bonus">${bonusStr}</div>
+  </div>`;
+}
+
+// ============================================================
+// KEYBOARD SHORTCUT
+// ============================================================
+
+document.getElementById('action-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') logAction();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+
+autoAdvanceDay();
+updateHideDoneUI();
+initSwipeNavigation();
+render();
+
+// ============================================================
+// SERVICE WORKER登録（オフライン対応）
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.log('Service Worker登録失敗:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
