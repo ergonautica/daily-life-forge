@@ -48,6 +48,28 @@
     --cat-energy:     #f5c842; /* エナジー            ゴールド */
     --radius-lg: 16px;
   }
+  /* ライトテーマ（設定タブのテーマ切り替えで有効化）。
+     --green/--coral は色覚多様性に配慮し、純粋な赤緑ではなく
+     青緑/朱色寄りの配色（Okabe-Ito系）にして判別しやすくしている */
+  :root[data-theme="light"] {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface2: #edeff5;
+    --surface3: #e1e4ee;
+    --border: rgba(20,22,35,0.08);
+    --border2: rgba(20,22,35,0.16);
+    --text: #1a1d27;
+    --text2: #565c76;
+    --text3: #878da3;
+    --accent: #3d5fd6;
+    --gold: #a8790a;
+    --green: #04815c;
+    --green-dim: rgba(4,129,92,0.12);
+    --coral: #c85a1e;
+    --coral-dim: rgba(200,90,30,0.12);
+    --purple: #8028c9;
+    --teal: #0a8f80;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
@@ -912,6 +934,7 @@
     <div id="normal-actions-content">
       <div id="onboarding-hint" style="display:none"></div>
       <div id="daily-goal-card"></div>
+      <div id="weekly-challenge-card"></div>
       <div class="section-h">今日の達成カテゴリ</div>
       <div class="streak-bar" id="cat-streak-bar"></div>
       <div class="log-target-row" id="log-target-row" style="display:none">
@@ -1004,6 +1027,19 @@
     </button>
 
     <div class="section-h">表示設定</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:600">テーマ</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">画面の配色を切り替える</div>
+        </div>
+        <div class="log-target-toggle" id="theme-toggle">
+          <button class="log-target-btn" id="theme-btn-auto" onclick="setTheme('auto')">自動</button>
+          <button class="log-target-btn" id="theme-btn-light" onclick="setTheme('light')">ライト</button>
+          <button class="log-target-btn" id="theme-btn-dark" onclick="setTheme('dark')">ダーク</button>
+        </div>
+      </div>
+    </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
@@ -1795,6 +1831,8 @@ const DEFAULT_STATE = () => ({
   todayHadRest: false,
   todayHadFood: false,
   todayHadHealth: false,
+  theme: 'auto', // 'auto' | 'light' | 'dark'
+  weeklyChallengeClaimedWeek: null, // 今週の週間チャレンジを達成済みならその週の月曜日付
 });
 
 const SAVE_KEY = 'dailyLifeForge_v2';
@@ -2171,6 +2209,7 @@ function logAction(customRewards, quickActionId) {
     G.history[0].log.unshift(entry);
     document.getElementById('action-input').value = '';
     checkAchievements();
+    checkWeeklyChallenge(cat);
     saveState();
     render();
     setLogTarget('today'); // 送信後は自動で「今日」に戻す（誤操作防止）
@@ -2190,6 +2229,7 @@ function logAction(customRewards, quickActionId) {
   checkAchievements();
   checkCombo();
   checkDailyGoal(cat);
+  checkWeeklyChallenge(cat);
   saveState();
   render();
 
@@ -2574,6 +2614,39 @@ function updateIronWillUI() {
 }
 
 // ============================================================
+// THEME
+// ============================================================
+
+function setTheme(mode) {
+  G.theme = mode;
+  saveState();
+  applyTheme();
+  updateThemeUI();
+}
+
+function applyTheme() {
+  const effective = G.theme === 'auto'
+    ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    : G.theme;
+  document.documentElement.setAttribute('data-theme', effective);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', effective === 'light' ? '#f4f5f9' : '#0f1117');
+}
+
+function updateThemeUI() {
+  ['auto', 'light', 'dark'].forEach(mode => {
+    const btn = document.getElementById('theme-btn-' + mode);
+    if (btn) btn.classList.toggle('active', G.theme === mode);
+  });
+}
+
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (G.theme === 'auto') applyTheme();
+  });
+}
+
+// ============================================================
 // TOAST
 // ============================================================
 
@@ -2761,6 +2834,7 @@ function renderActionsPanel() {
 
   updateCatPreview();
   renderDailyGoalCard();
+  renderWeeklyChallengeCard();
 
   // 初回記録前のヒント表示（チュートリアル済み・実記録がまだの間だけ表示）
   const hintEl = document.getElementById('onboarding-hint');
@@ -3345,6 +3419,8 @@ function sanitizeState(state) {
   if (!Array.isArray(state.longTermGoals)) state.longTermGoals = [];
   if (!state.nextLongTermGoalNum) state.nextLongTermGoalNum = 1;
   if (state.ironWillMode === undefined) state.ironWillMode = false;
+  if (state.theme === undefined) state.theme = 'auto';
+  if (state.weeklyChallengeClaimedWeek === undefined) state.weeklyChallengeClaimedWeek = null;
   return state;
 }
 
@@ -3829,6 +3905,95 @@ function renderDailyGoalCard() {
 }
 
 // ============================================================
+// WEEKLY CHALLENGE（研究「遠くを見る力」で解放。長期タブと同じ週感覚の機能のため相乗り）
+// ============================================================
+
+const WEEKLY_CHALLENGES = [
+  { id: 'wk_health',     name: '今週は身体を鍛える週',   desc: '運動を3回記録しよう',           cat: 'health',              icon: '🏃', target: 3, bonus: { vitality: 15, energy: 8 } },
+  { id: 'wk_wellness',   name: '今週は体調を整える週',   desc: '衛生か休養を合わせて3回記録しよう', cat: ['hygiene', 'rest'],   icon: '🌿', target: 3, bonus: { wellness: 15, energy: 8 } },
+  { id: 'wk_growth',     name: '今週は学びの週',         desc: '学習か創作を合わせて3回記録しよう', cat: ['mind', 'creative'],  icon: '📚', target: 3, bonus: { growth: 15, mindset: 8 } },
+  { id: 'wk_life',       name: '今週は暮らしを回す週',   desc: '家事を3回記録しよう',           cat: 'house',               icon: '🏠', target: 3, bonus: { life: 15, wellness: 8 } },
+  { id: 'wk_positivity', name: '今週はご機嫌の週',       desc: 'マインドを3回記録しよう',       cat: 'positivity',          icon: '😊', target: 3, bonus: { mindset: 15, wellness: 8 } },
+];
+
+// 今日を含む週の月曜日（YYYY-MM-DD）を返す
+function getWeekStartString(d = new Date()) {
+  const dow = d.getDay();
+  const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - daysSinceMonday);
+  return getLocalDateString(monday);
+}
+
+// 週替わりで固定の週間チャレンジを1つ選ぶ（月曜日付をエポックからの週数に変換してローテーション）
+function getCurrentWeeklyChallenge() {
+  const weekStart = getWeekStartString();
+  const mondayDate = new Date(weekStart + 'T00:00:00');
+  const weekIndex = Math.floor(mondayDate.getTime() / (7 * 86400000));
+  return WEEKLY_CHALLENGES[((weekIndex % WEEKLY_CHALLENGES.length) + WEEKLY_CHALLENGES.length) % WEEKLY_CHALLENGES.length];
+}
+
+// 今週分（todayLog + history）の対象カテゴリの記録件数を数える
+function getWeeklyChallengeCount(challenge) {
+  const weekStart = getWeekStartString();
+  const cats = Array.isArray(challenge.cat) ? challenge.cat : [challenge.cat];
+  let count = 0;
+  G.todayLog.forEach(entry => { if (cats.includes(entry.cat)) count++; });
+  (G.history || []).forEach(h => {
+    const hDate = getDateForDay(h.day);
+    if (hDate && getLocalDateString(hDate) >= weekStart) {
+      (h.log || []).forEach(entry => { if (cats.includes(entry.cat)) count++; });
+    }
+  });
+  return count;
+}
+
+// 記録のたびに呼ぶ。今週分の目標数に達していれば1週間に1回だけボーナスを付与
+function checkWeeklyChallenge(cat) {
+  if (!G.researched.includes('long_term_view')) return; // 未解放なら機能自体を無効化
+  const challenge = getCurrentWeeklyChallenge();
+  const cats = Array.isArray(challenge.cat) ? challenge.cat : [challenge.cat];
+  if (!cats.includes(cat)) return;
+  const weekStart = getWeekStartString();
+  if (G.weeklyChallengeClaimedWeek === weekStart) return; // 今週はもう受け取り済み
+  if (getWeeklyChallengeCount(challenge) < challenge.target) return;
+
+  G.weeklyChallengeClaimedWeek = weekStart;
+  applyRewards(challenge.bonus);
+  const bonusStr = Object.entries(challenge.bonus).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+  addSystemLog(`🗓️ 週間チャレンジ達成！「${challenge.name}」→ ${bonusStr}`);
+  setTimeout(() => toast(`🗓️ 週間チャレンジ達成！ ${bonusStr}`, true), 600);
+}
+
+function renderWeeklyChallengeCard() {
+  const el = document.getElementById('weekly-challenge-card');
+  if (!el) return;
+  if (!G.researched.includes('long_term_view')) { el.innerHTML = ''; return; } // 未解放なら存在自体を隠す
+
+  const challenge = getCurrentWeeklyChallenge();
+  const weekStart = getWeekStartString();
+  const done = G.weeklyChallengeClaimedWeek === weekStart;
+  const count = Math.min(challenge.target, getWeeklyChallengeCount(challenge));
+  const pct = (count / challenge.target) * 100;
+  const bonusStr = Object.entries(challenge.bonus).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+
+  el.innerHTML = `<div class="daily-goal-card ${done ? 'done' : ''}" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="daily-goal-icon">${done ? '✅' : challenge.icon}</span>
+      <div class="daily-goal-text">
+        <div class="daily-goal-name">${challenge.name}${done ? '（達成済み）' : ''}</div>
+        <div class="daily-goal-desc">${done ? '今週の目標はクリアしました！' : challenge.desc}</div>
+      </div>
+      <div class="daily-goal-bonus">${bonusStr}</div>
+    </div>
+    <div class="lt-goal-progress-bar-wrap">
+      <div class="lt-goal-progress-bar" style="width:${pct}%;background:var(--gold)"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text2);text-align:right">${count}/${challenge.target}</div>
+  </div>`;
+}
+
+// ============================================================
 // KEYBOARD SHORTCUT
 // ============================================================
 
@@ -3842,6 +4007,8 @@ document.getElementById('action-input').addEventListener('keydown', e => {
 
 autoAdvanceDay();
 updateHideDoneUI();
+applyTheme();
+updateThemeUI();
 initSwipeNavigation();
 render();
 
