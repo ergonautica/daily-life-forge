@@ -3909,7 +3909,7 @@ function renderDailyGoalCard() {
 // ============================================================
 
 const WEEKLY_CHALLENGES = [
-  { id: 'wk_health',     name: '今週は身体を鍛える週',   desc: '運動を3回記録しよう',           cat: 'health',              icon: '🏃', target: 3, bonus: { vitality: 15, energy: 8 } },
+  { id: 'wk_health',     name: '今週は身体を鍛える週',   desc: '3種類の運動をしよう',           cat: 'health',              icon: '🏃', target: 3, unique: true, bonus: { vitality: 15, energy: 8 } },
   { id: 'wk_wellness',   name: '今週は体調を整える週',   desc: '衛生か休養を合わせて3回記録しよう', cat: ['hygiene', 'rest'],   icon: '🌿', target: 3, bonus: { wellness: 15, energy: 8 } },
   { id: 'wk_growth',     name: '今週は学びの週',         desc: '学習か創作を合わせて3回記録しよう', cat: ['mind', 'creative'],  icon: '📚', target: 3, bonus: { growth: 15, mindset: 8 } },
   { id: 'wk_life',       name: '今週は暮らしを回す週',   desc: '家事を3回記録しよう',           cat: 'house',               icon: '🏠', target: 3, bonus: { life: 15, wellness: 8 } },
@@ -3933,10 +3933,23 @@ function getCurrentWeeklyChallenge() {
   return WEEKLY_CHALLENGES[((weekIndex % WEEKLY_CHALLENGES.length) + WEEKLY_CHALLENGES.length) % WEEKLY_CHALLENGES.length];
 }
 
-// 今週分（todayLog + history）の対象カテゴリの記録件数を数える
+// 今週分（todayLog + history）の対象カテゴリの記録件数（unique指定時は行動テキストの種類数）を数える
 function getWeeklyChallengeCount(challenge) {
   const weekStart = getWeekStartString();
   const cats = Array.isArray(challenge.cat) ? challenge.cat : [challenge.cat];
+
+  if (challenge.unique) {
+    const labels = new Set();
+    G.todayLog.forEach(entry => { if (cats.includes(entry.cat)) labels.add(entry.text); });
+    (G.history || []).forEach(h => {
+      const hDate = getDateForDay(h.day);
+      if (hDate && getLocalDateString(hDate) >= weekStart) {
+        (h.log || []).forEach(entry => { if (cats.includes(entry.cat)) labels.add(entry.text); });
+      }
+    });
+    return labels.size;
+  }
+
   let count = 0;
   G.todayLog.forEach(entry => { if (cats.includes(entry.cat)) count++; });
   (G.history || []).forEach(h => {
