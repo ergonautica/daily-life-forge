@@ -1102,6 +1102,16 @@
       ✓ オフラインで動作します<br>
       ✓ データはこの端末に保存されます
     </div>
+    <div class="section-h" style="margin-top:16px">アプリのバージョン</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:600">現在のバージョン</div>
+          <div id="app-version-label" style="font-size:11px;color:var(--text3);margin-top:2px"></div>
+        </div>
+        <button class="modal-btn" id="check-update-btn" onclick="checkForLatestVersion()" style="width:auto;white-space:nowrap">🔄 最新版を確認</button>
+      </div>
+    </div>
     <div class="section-h" style="margin-top:16px">ゲームについて</div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;color:var(--text2);line-height:1.8">
       <strong style="color:var(--text)">Daily Life Forge</strong><br>
@@ -1122,6 +1132,9 @@
 // ============================================================
 // GAME DATA DEFINITIONS
 // ============================================================
+
+// sw.jsのCACHE_NAMEと必ず同じ値にすること（設定画面の「最新版を確認」がこの値を比較に使う）
+const APP_VERSION = 'daily-life-forge-v6';
 
 const RESOURCES = {
   vitality: { name: '体力',     icon: '💪', color: '#f97316' },
@@ -2650,6 +2663,35 @@ if (window.matchMedia) {
 // TOAST
 // ============================================================
 
+// 設定画面の「最新版を確認」：サーバー上のsw.jsを直接取得してバージョンを比較し、古ければ再読み込みする
+async function checkForLatestVersion() {
+  const btn = document.getElementById('check-update-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '確認中…'; }
+
+  try {
+    const res = await fetch('./sw.js?_=' + Date.now(), { cache: 'no-store' });
+    const text = await res.text();
+    const match = text.match(/CACHE_NAME\s*=\s*'([^']+)'/);
+    const remoteVersion = match ? match[1] : null;
+
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+
+    if (remoteVersion && remoteVersion !== APP_VERSION) {
+      toast(`🆕 新しいバージョン(${remoteVersion})があります。再読み込みします`, true);
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      toast('✓ 最新版です', true);
+    }
+  } catch (e) {
+    toast('確認に失敗しました。通信環境をご確認ください', false);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 最新版を確認'; }
+  }
+}
+
 function toast(msg, good) {
   const el = document.createElement('div');
   el.className = 'toast' + (good ? ' good' : '');
@@ -4024,6 +4066,7 @@ applyTheme();
 updateThemeUI();
 initSwipeNavigation();
 render();
+document.getElementById('app-version-label').textContent = APP_VERSION;
 
 // ============================================================
 // SERVICE WORKER登録（オフライン対応）
