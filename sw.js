@@ -3,7 +3,7 @@
 // ・ネットワークが遅い（電波が悪い等）ときは一定時間で諦めてキャッシュを表示
 // ・完全にオフラインのときもキャッシュを表示
 
-const CACHE_NAME = 'daily-life-forge-v6'; // 大きく更新した際はこの番号を上げてください。index.htmlのAPP_VERSIONも同じ値にすること
+const CACHE_NAME = 'daily-life-forge-v7'; // 大きく更新した際はこの番号を上げてください。index.htmlのAPP_VERSIONも同じ値にすること
 const CACHE_URLS = [
   './',
   './index.html',
