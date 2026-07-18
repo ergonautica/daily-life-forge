@@ -781,6 +781,7 @@
   .lt-calendar-cell.has-progress { background: var(--green-dim); border-color: var(--green); }
   .lt-calendar-cell.has-progress .lt-cell-date { color: var(--green); font-weight: 700; }
   .lt-cell-mark { font-size: 9px; line-height: 1; }
+  .lt-calendar-cell.has-progress .lt-cell-mark { color: var(--green); font-weight: 700; }
   .lt-goal-card {
     background: var(--surface2);
     border: 1px solid var(--border2);
@@ -1149,7 +1150,7 @@
 // ============================================================
 
 // sw.jsのCACHE_NAMEと必ず同じ値にすること（設定画面の「最新版を確認」がこの値を比較に使う）
-const APP_VERSION = 'daily-life-forge-v7';
+const APP_VERSION = 'daily-life-forge-v8';
 
 const RESOURCES = {
   vitality: { name: '体力',     icon: '💪', color: '#f97316' },
@@ -3689,6 +3690,19 @@ function getAllLongTermProgressDates() {
   return dates;
 }
 
+// 日付ごとの進捗量(‰)を全目標合算で返す。progressLogの値が数値なら「その日の増分(単位数)」、
+// 旧形式のtrueなら増分不明として0を加算(日付の存在自体は進捗ありとして扱う)
+function getAllLongTermProgressPermilleByDate() {
+  const map = {};
+  (G.longTermGoals || []).forEach(g => {
+    Object.entries(g.progressLog || {}).forEach(([d, v]) => {
+      if (!(d in map)) map[d] = 0;
+      if (typeof v === 'number' && g.totalUnits > 0) map[d] += (v / g.totalUnits) * 1000;
+    });
+  });
+  return map;
+}
+
 function renderLongTermCalendar() {
   const el = document.getElementById('longterm-calendar');
   if (!el) return;
@@ -3707,7 +3721,7 @@ function renderLongTermCalendar() {
   const startMonday = new Date(thisMonday);
   startMonday.setDate(thisMonday.getDate() - 21);
 
-  const progressDates = getAllLongTermProgressDates();
+  const permilleByDate = getAllLongTermProgressPermilleByDate();
   const weekdayLabels = ['月','火','水','木','金','土','日'];
 
   let html = '<div class="lt-calendar-weekdays">' + weekdayLabels.map(d => `<div>${d}</div>`).join('') + '</div>';
@@ -3717,12 +3731,14 @@ function renderLongTermCalendar() {
       const cellDate = new Date(startMonday);
       cellDate.setDate(startMonday.getDate() + week * 7 + day);
       const cellDateStr = getLocalDateString(cellDate);
-      const hasProgress = progressDates.has(cellDateStr);
+      const hasProgress = cellDateStr in permilleByDate;
       const isToday = cellDateStr === todayStr;
       const isFuture = cellDate > today;
+      // その日の進捗量(‰)。四捨五入で0以下になる日(旧形式のtrueのみの日を含む)は1と表示する
+      const permille = hasProgress ? Math.max(1, Math.round(permilleByDate[cellDateStr])) : 0;
       html += `<div class="lt-calendar-cell ${hasProgress?'has-progress':''} ${isToday?'today':''} ${isFuture?'future':''}">
         <span class="lt-cell-date">${cellDate.getDate()}</span>
-        ${hasProgress ? '<span class="lt-cell-mark">🌱</span>' : ''}
+        ${hasProgress ? `<span class="lt-cell-mark">${permille}‰</span>` : ''}
       </div>`;
     }
     html += '</div>';
@@ -3744,7 +3760,7 @@ function renderLongTermGoals() {
   el.innerHTML = G.longTermGoals.map(g => {
     const pct = g.totalUnits > 0 ? Math.min(100, (g.currentUnits / g.totalUnits) * 100) : 0;
     const pctStr = pct.toFixed(1);
-    const doneToday = !!(g.progressLog && g.progressLog[today]);
+    const doneToday = !!(g.progressLog && Object.prototype.hasOwnProperty.call(g.progressLog, today));
     const ci = CATEGORY_INFO[g.cat] || { icon: '🎯', label: '' };
     const col = getCatColor(g.cat);
 
@@ -3864,16 +3880,21 @@ function updateLongTermGoalProgress(goalId, newValue) {
   const g = G.longTermGoals.find(x => x.id === goalId);
   if (!g) return;
 
+  const delta = newValue - (g.currentUnits || 0);
   g.currentUnits = newValue;
   const newPct = g.totalUnits > 0 ? (g.currentUnits / g.totalUnits) * 100 : 0;
 
   const today = getLocalDateString();
   if (!g.progressLog) g.progressLog = {};
-  const alreadyToday = !!g.progressLog[today];
+  // 値での判定(!!)は禁止: その日の増分合計が0のとき偽になり、エナジーを二重付与してしまう
+  const alreadyToday = Object.prototype.hasOwnProperty.call(g.progressLog, today);
+
+  // progressLogにはその日の増分(単位数)の合計を数値で持つ(旧形式trueは増分0扱いで引き継ぐ)
+  const prevDelta = typeof g.progressLog[today] === 'number' ? g.progressLog[today] : 0;
+  g.progressLog[today] = prevDelta + delta;
 
   let gainedEnergy = false;
   if (!alreadyToday) {
-    g.progressLog[today] = true;
     applyRewards({ energy: 1 });
     gainedEnergy = true;
   }
