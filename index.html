@@ -1150,7 +1150,7 @@
 // ============================================================
 
 // sw.jsのCACHE_NAMEと必ず同じ値にすること（設定画面の「最新版を確認」がこの値を比較に使う）
-const APP_VERSION = 'daily-life-forge-v8';
+const APP_VERSION = 'daily-life-forge-v9';
 
 const RESOURCES = {
   vitality: { name: '体力',     icon: '💪', color: '#f97316' },
@@ -1235,7 +1235,7 @@ const ENERGY_CONVERSIONS = [
   { id: 'refresh_growth',   name: '振り返りタイム',   icon: '📖', desc: 'エナジー10で成長+5に変換',   cost: 10, gain: { growth: 5 } },
   { id: 'refresh_mindset',  name: '集中タイム',       icon: '💭', desc: 'エナジー10で思考+5に変換',   cost: 10, gain: { mindset: 5 } },
   { id: 'refresh_life',     name: '生活見直しタイム', icon: '🏠', desc: 'エナジー10で生活+5に変換',   cost: 10, gain: { life: 5 } },
-  { id: 'refresh_all',      name: '充実した一日',     icon: '✨', desc: 'まとめて少しずつ全資源に変換', cost: 25, gain: { vitality: 2, wellness: 2, growth: 2, mindset: 2, life: 2 } },
+  { id: 'refresh_all',      name: '充実した一日',     icon: '✨', desc: 'エナジー25で全資源+5に変換', cost: 25, gain: { vitality: 5, wellness: 5, growth: 5, mindset: 5, life: 5 } },
 ];
 
 // ============================================================
