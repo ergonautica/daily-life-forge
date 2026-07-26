@@ -765,6 +765,7 @@
   }
   .lt-calendar-cell {
     aspect-ratio: 1.8;
+    min-height: 34px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -776,6 +777,19 @@
     color: var(--text3);
     position: relative;
   }
+  .lt-calendar-cell.selectable { cursor: pointer; }
+  .lt-calendar-cell.selected { box-shadow: inset 0 0 0 2px var(--accent); border-color: var(--accent); }
+  .lt-calendar-cell.selected .lt-cell-date { color: var(--accent); font-weight: 700; }
+  .lt-backdate-banner {
+    margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+    background: var(--green-dim); border: 1px solid var(--accent);
+    font-size: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .lt-backdate-banner button {
+    margin-left: auto; min-height: 32px; padding: 4px 10px; border-radius: 6px;
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); font-size: 12px;
+  }
+  .lt-backdate-hint { margin-top: 6px; font-size: 10px; color: var(--text3); }
   .lt-calendar-cell.future { opacity: 0.3; }
   .lt-calendar-cell.today { border-color: var(--accent); border-width: 2px; }
   .lt-calendar-cell.has-progress { background: var(--green-dim); border-color: var(--green); }
@@ -1150,7 +1164,7 @@
 // ============================================================
 
 // sw.jsのCACHE_NAMEと必ず同じ値にすること（設定画面の「最新版を確認」がこの値を比較に使う）
-const APP_VERSION = 'daily-life-forge-v9';
+const APP_VERSION = 'daily-life-forge-v10';
 
 const RESOURCES = {
   vitality: { name: '体力',     icon: '💪', color: '#f97316' },
@@ -2582,6 +2596,8 @@ function checkAchievements() {
 // 管理者モード
 let adminMode = false;
 let hideDoneResearch = true; // デフォルトON
+// 長期タブ: カレンダーで選択中の記録対象日(null=今日)。セッション限りでG状態には保存しない
+let ltSelectedDate = null;
 
 function handleAdminToggle() {
   adminMode = !adminMode;
@@ -2721,6 +2737,7 @@ function toast(msg, good) {
 // ============================================================
 
 function switchTab(tab, el) {
+  ltSelectedDate = null; // タブを移動したら記録対象日を今日に戻す(過去日への誤記録防止)
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
@@ -3734,16 +3751,42 @@ function renderLongTermCalendar() {
       const hasProgress = cellDateStr in permilleByDate;
       const isToday = cellDateStr === todayStr;
       const isFuture = cellDate > today;
+      const isSelected = ltSelectedDate === cellDateStr;
       // その日の進捗量(‰)。四捨五入で0以下になる日(旧形式のtrueのみの日を含む)は1と表示する
       const permille = hasProgress ? Math.max(1, Math.round(permilleByDate[cellDateStr])) : 0;
-      html += `<div class="lt-calendar-cell ${hasProgress?'has-progress':''} ${isToday?'today':''} ${isFuture?'future':''}">
+      const cls = ['lt-calendar-cell'];
+      if (hasProgress) cls.push('has-progress');
+      if (isToday) cls.push('today');
+      if (isFuture) cls.push('future'); else cls.push('selectable');
+      if (isSelected) cls.push('selected');
+      const onclick = isFuture ? '' : ` onclick="selectLTDate('${cellDateStr}')"`;
+      html += `<div class="${cls.join(' ')}"${onclick}>
         <span class="lt-cell-date">${cellDate.getDate()}</span>
         ${hasProgress ? `<span class="lt-cell-mark">${permille}‰</span>` : ''}
       </div>`;
     }
     html += '</div>';
   }
+  // 記録対象日のバナー / 使い方ヒント
+  if (ltSelectedDate) {
+    const [, m, d] = ltSelectedDate.split('-');
+    html += `<div class="lt-backdate-banner">📅 <b>${+m}/${+d}</b> に進捗を記録します<button onclick="clearLTDate()">今日に戻す</button></div>`;
+  } else {
+    html += `<div class="lt-backdate-hint">過去の日付をタップすると、その日に進捗を記録できます（記録漏れの後追い入力用）。</div>`;
+  }
   el.innerHTML = html;
+}
+
+// カレンダーで記録対象日を選択（今日/選択中を再タップで解除、未来は不可）
+function selectLTDate(dateStr) {
+  const today = getLocalDateString();
+  if (dateStr > today) return; // 未来は選択不可
+  ltSelectedDate = (ltSelectedDate === dateStr || dateStr === today) ? null : dateStr;
+  renderLongTermPanel();
+}
+function clearLTDate() {
+  ltSelectedDate = null;
+  renderLongTermPanel();
 }
 
 function renderLongTermGoals() {
@@ -3757,10 +3800,14 @@ function renderLongTermGoals() {
   }
 
   const today = getLocalDateString();
+  const targetDate = ltSelectedDate || today;
+  const back = !!ltSelectedDate;
+  const [, tm, td] = targetDate.split('-');
+  const dateLabel = `${+tm}/${+td}`;
   el.innerHTML = G.longTermGoals.map(g => {
     const pct = g.totalUnits > 0 ? Math.min(100, (g.currentUnits / g.totalUnits) * 100) : 0;
     const pctStr = pct.toFixed(1);
-    const doneToday = !!(g.progressLog && Object.prototype.hasOwnProperty.call(g.progressLog, today));
+    const doneOnDate = !!(g.progressLog && Object.prototype.hasOwnProperty.call(g.progressLog, targetDate));
     const ci = CATEGORY_INFO[g.cat] || { icon: '🎯', label: '' };
     const col = getCatColor(g.cat);
 
@@ -3780,9 +3827,9 @@ function renderLongTermGoals() {
       </div>
       <div class="lt-goal-progress-text">${g.currentUnits} / ${g.totalUnits} ${g.unit}　(${pctStr}%)</div>
       <div class="lt-goal-milestones">${milestoneChips}</div>
-      ${doneToday ? '<div class="lt-goal-done-badge">✓ 今日の分は記録済み（追加の記録も可能）</div>' : ''}
+      ${doneOnDate ? `<div class="lt-goal-done-badge">✓ ${back ? dateLabel + 'の分は' : '今日の分は'}記録済み（追加の記録も可能）</div>` : ''}
       <button class="modal-btn primary" onclick="openProgressInput('${g.id}')">
-        ${doneToday ? '進捗を追加で記録する' : '進捗を記録する'}
+        ${back ? `📅 ${dateLabel} に${doneOnDate ? '追加で記録' : '記録する'}` : (doneOnDate ? '進捗を追加で記録する' : '進捗を記録する')}
       </button>
     </div>`;
   }).join('');
@@ -3869,7 +3916,12 @@ function deleteLongTermGoal(id) {
 function openProgressInput(goalId) {
   const g = G.longTermGoals.find(x => x.id === goalId);
   if (!g) return;
-  const input = prompt(`現在の達成数を入力してください（${g.unit}）\n目標：${g.totalUnits}${g.unit}`, g.currentUnits);
+  let dateNote = '';
+  if (ltSelectedDate) {
+    const [, m, d] = ltSelectedDate.split('-');
+    dateNote = `\n📅 ${+m}/${+d} の進捗として記録します（累計の達成数を入力）`;
+  }
+  const input = prompt(`現在の達成数を入力してください（${g.unit}）\n目標：${g.totalUnits}${g.unit}${dateNote}`, g.currentUnits);
   if (input === null) return;
   const val = parseFloat(input);
   if (isNaN(val) || val < 0) { toast('正しい数値を入力してください', false); return; }
@@ -3884,17 +3936,18 @@ function updateLongTermGoalProgress(goalId, newValue) {
   g.currentUnits = newValue;
   const newPct = g.totalUnits > 0 ? (g.currentUnits / g.totalUnits) * 100 : 0;
 
-  const today = getLocalDateString();
+  // 記録対象日: カレンダーで過去日を選択していればその日、なければ今日
+  const logDate = ltSelectedDate || getLocalDateString();
   if (!g.progressLog) g.progressLog = {};
   // 値での判定(!!)は禁止: その日の増分合計が0のとき偽になり、エナジーを二重付与してしまう
-  const alreadyToday = Object.prototype.hasOwnProperty.call(g.progressLog, today);
+  const alreadyLogged = Object.prototype.hasOwnProperty.call(g.progressLog, logDate);
 
   // progressLogにはその日の増分(単位数)の合計を数値で持つ(旧形式trueは増分0扱いで引き継ぐ)
-  const prevDelta = typeof g.progressLog[today] === 'number' ? g.progressLog[today] : 0;
-  g.progressLog[today] = prevDelta + delta;
+  const prevDelta = typeof g.progressLog[logDate] === 'number' ? g.progressLog[logDate] : 0;
+  g.progressLog[logDate] = prevDelta + delta;
 
   let gainedEnergy = false;
-  if (!alreadyToday) {
+  if (!alreadyLogged) {
     applyRewards({ energy: 1 });
     gainedEnergy = true;
   }
@@ -3923,12 +3976,14 @@ function updateLongTermGoalProgress(goalId, newValue) {
   saveState();
   render();
 
+  let datePrefix = '';
+  if (ltSelectedDate) { const [, m, d] = ltSelectedDate.split('-'); datePrefix = `${+m}/${+d}に`; }
   if (bonusMsgs.length > 0) {
     bonusMsgs.forEach((msg, i) => setTimeout(() => toast(msg, true), 300 + i * 900));
   } else if (gainedEnergy) {
-    toast('進捗を記録しました +1⚡', true);
+    toast(`${datePrefix}進捗を記録しました +1⚡`, true);
   } else {
-    toast('進捗を更新しました', true);
+    toast(`${datePrefix}進捗を更新しました`, true);
   }
 }
 
