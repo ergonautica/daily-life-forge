@@ -597,6 +597,7 @@
     padding: 8px 14px;
     font-size: 12px;
     font-weight: 500;
+    white-space: pre-line;
     animation: toastIn 0.25s ease, toastOut 0.3s ease 2.2s forwards;
     pointer-events: none;
     max-width: 260px;
@@ -713,6 +714,8 @@
   .qa-manage-btn.danger { color: var(--coral); border-color: var(--coral-dim); }
   .qa-form-row { margin-bottom: 10px; }
   .qa-form-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; display: block; }
+  .qa-form-daily { display: flex; align-items: center; gap: 8px; min-height: 32px; font-size: 12px; color: var(--text2); cursor: pointer; }
+  .qa-form-daily input { width: 20px; height: 20px; margin: 0; }
   .qa-form-row input[type="text"], .qa-form-row select {
     width: 100%;
     background: var(--surface2);
@@ -1031,6 +1034,7 @@
   <div class="panel" id="panel-stats">
     <div class="section-h">ステータス</div>
     <div class="stats-grid" id="stats-grid"></div>
+    <button class="modal-btn" onclick="openWeeklySummary(0)">📸 今週のまとめ（画像にして見せる）</button>
     <div class="section-h">実績</div>
     <div class="ach-grid" id="ach-grid"></div>
   </div>
@@ -1158,6 +1162,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 <div id="qa-editor-root"></div>
+<div id="weekly-summary-root"></div>
 
 <script>
 // ============================================================
@@ -1165,7 +1170,7 @@
 // ============================================================
 
 // sw.jsのCACHE_NAMEと必ず同じ値にすること（設定画面の「最新版を確認」がこの値を比較に使う）
-const APP_VERSION = 'daily-life-forge-v11';
+const APP_VERSION = 'daily-life-forge-v12';
 
 const RESOURCES = {
   vitality: { name: '体力',     icon: '💪', color: '#f97316' },
@@ -1998,6 +2003,7 @@ function getEnergyBoostMultiplier() {
 // クイック項目ごとの「最近の実施頻度」に応じた報酬倍率
 // ・3日以上やっていない → +20%、7日以上 → +40%
 // ・直近5日連続でやっている → -15%（下げすぎないよう最大でこれまで）
+//   ただし「毎日やる項目」（daily: true）は続けること自体が目的なので下げない
 function getFrequencyMultiplier(quickActionId) {
   if (!quickActionId) return 1;
 
@@ -2016,6 +2022,7 @@ function getFrequencyMultiplier(quickActionId) {
   if (daysSinceLastDone >= 3) return 1.2;
 
   // 直近5日連続でやっているか（今日を除く昨日から数える）
+  if (G.quickActions.find(a => a.id === quickActionId)?.daily) return 1;
   let consecutiveDone = 0;
   for (let i = 1; i <= 5 && i < doneFlags.length; i++) {
     if (doneFlags[i]) consecutiveDone++;
@@ -2113,6 +2120,34 @@ function buildingCostAtLevel(b, nextLv) {
 
 function canAfford(cost) {
   return Object.entries(cost).every(([r, v]) => (G.resources[r] || 0) >= v);
+}
+
+// 記録した直後に「次に手が届く道具・研究」を1つ返す。
+// 点数だけでなく、何にどこまで近づいたかを返す（情報的なフィードバック）
+function getNextGoalHint(rewards) {
+  const gained = Object.keys(rewards);
+  const cands = [];
+  for (const b of BUILDINGS) {
+    const st = getBuildingStatus(b);
+    if (st !== 'done' && st !== 'unlocked') continue;
+    const lv = G.buildings[b.id] || 0;
+    cands.push({ label: lv > 0 ? `${b.icon} ${b.name} Lv${lv + 1}` : `${b.icon} ${b.name}`, cost: buildingCostAtLevel(b, lv + 1) });
+  }
+  for (const r of RESEARCH) {
+    if (getResearchStatus(r) === 'unlocked') cands.push({ label: `${r.icon} ${r.name}`, cost: r.cost });
+  }
+  let best = null;
+  for (const c of cands) {
+    const entries = Object.entries(c.cost);
+    if (!entries.some(([res]) => gained.includes(res))) continue; // 今回増えた資源に関係するものだけ
+    if (entries.some(([res, v]) => v > (G.caps[res] || 999))) continue; // 上限を超えるコストは今は届かない
+    const short = entries.map(([res, v]) => [res, Math.max(0, v - (G.resources[res] || 0))]).filter(([, v]) => v > 0);
+    const total = short.reduce((a, [, v]) => a + v, 0);
+    if (!best || total < best.total) best = { ...c, short, total };
+  }
+  if (!best) return '';
+  if (best.total === 0) return `→ ${best.label} に手が届きます`;
+  return `→ ${best.label} まで ${best.short.map(([r, v]) => `${RESOURCES[r].icon}あと${v}`).join(' ')}`;
 }
 
 // 道具の解放条件を満たしているか
@@ -2247,6 +2282,8 @@ function logAction(customRewards, quickActionId) {
   gainXP(5 + Object.values(rewards).reduce((a,b) => a+b, 0));
 
   const rewardStr = Object.entries(rewards).map(([r,v]) => `+${v}${RESOURCES[r].icon}`).join(' ');
+  const hint = getNextGoalHint(rewards);
+  const hintLine = hint ? `\n${hint}` : '';
 
   if (logTargetDay === 'yesterday' && G.history[0]) {
     // 昨日の記録として、履歴に直接追加する
@@ -2257,9 +2294,13 @@ function logAction(customRewards, quickActionId) {
     saveState();
     render();
     setLogTarget('today'); // 送信後は自動で「今日」に戻す（誤操作防止）
-    toast(`✓ 昨日の記録に追加：${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}`, true);
+    toast(`✓ 昨日の記録に追加：${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}${hintLine}`, true, hint ? 4000 : 2600);
     return;
   }
+
+  // その項目の今日1回目なら「なぜやるか」を添える（毎回だと読まなくなるので1日1回）
+  const qa = quickActionId ? G.quickActions.find(a => a.id === quickActionId) : null;
+  const whyLine = qa && qa.why && !G.todayLog.some(e => e.quickActionId === quickActionId) ? `\n💭 ${qa.why}` : '';
 
   G.todayLog.unshift(entry);
   if (cat === 'rest') G.todayHadRest = true;
@@ -2280,7 +2321,7 @@ function logAction(customRewards, quickActionId) {
   if (wasFirstAction) {
     setTimeout(() => toast('🎉 タブが解放されました！', true), 700);
   }
-  toast(`${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}`, true);
+  toast(`${CATEGORY_INFO[cat].icon} ${text} → ${rewardStr}${hintLine}${whyLine}`, true, hintLine || whyLine ? 4000 : 2600);
 }
 
 function updateCatPreview() {
@@ -2725,12 +2766,13 @@ async function checkForLatestVersion() {
   }
 }
 
-function toast(msg, good) {
+function toast(msg, good, duration = 2600) {
   const el = document.createElement('div');
   el.className = 'toast' + (good ? ' good' : '');
   el.textContent = msg;
+  if (duration !== 2600) el.style.animation = `toastIn 0.25s ease, toastOut 0.3s ease ${(duration - 400) / 1000}s forwards`;
   document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 2600);
+  setTimeout(() => el.remove(), duration);
 }
 
 // ============================================================
@@ -3551,7 +3593,7 @@ function openQuickActionListModal() {
           <span class="qa-manage-icon">${a.icon}</span>
           <div class="qa-manage-info">
             <div class="qa-manage-label">${a.label}</div>
-            <div class="qa-manage-cat">${ci.label}</div>
+            <div class="qa-manage-cat">${ci.label}${a.daily ? ' · 毎日やる' : ''}</div>
           </div>
           <button class="qa-manage-btn" onclick="openQuickActionEditor('${a.id}')" title="編集">✎</button>
           <button class="qa-manage-btn danger" onclick="deleteQuickAction('${a.id}')" title="削除">✕</button>
@@ -3610,6 +3652,16 @@ function openQuickActionEditor(id) {
           <label class="qa-form-label">固定報酬（空欄=カテゴリの標準報酬を使う）</label>
           <div class="qa-reward-grid">${resInputs}</div>
         </div>
+        <div class="qa-form-row">
+          <label class="qa-form-label">なぜやるか（任意。その日の1回目に表示）</label>
+          <input type="text" id="qa-form-why" maxlength="40" value="${editing && editing.why ? editing.why.replace(/"/g,'&quot;') : ''}" placeholder="例：子どもと走り回れる体力のため">
+        </div>
+        <div class="qa-form-row">
+          <label class="qa-form-daily">
+            <input type="checkbox" id="qa-form-daily" ${editing && editing.daily ? 'checked' : ''}>
+            <span>毎日やる項目（続けても報酬を下げない）</span>
+          </label>
+        </div>
 
         <button class="modal-btn primary" onclick="saveQuickActionFromEditor(${editing ? `'${id}'` : 'null'})">保存する</button>
         ${editing ? `<button class="modal-btn danger" onclick="deleteQuickAction('${id}')">このクイック記録を削除</button>` : ''}
@@ -3637,6 +3689,8 @@ function saveQuickActionFromEditor(id) {
     if (val > 0) customRewards[key] = val;
   });
   const hasCustomRewards = Object.keys(customRewards).length > 0;
+  const daily = document.getElementById('qa-form-daily').checked;
+  const why = document.getElementById('qa-form-why').value.trim();
 
   if (id) {
     // 既存項目の編集
@@ -3648,6 +3702,10 @@ function saveQuickActionFromEditor(id) {
       a.primaryRes = CATEGORY_INFO[cat]?.primaryRes;
       if (hasCustomRewards) a.customRewards = customRewards;
       else delete a.customRewards;
+      if (daily) a.daily = true;
+      else delete a.daily;
+      if (why) a.why = why;
+      else delete a.why;
     }
     toast('✓ 更新しました', true);
   } else {
@@ -3655,6 +3713,8 @@ function saveQuickActionFromEditor(id) {
     const newId = `qa_custom_${G.nextQuickActionNum++}`;
     const newAction = { id: newId, cat, label, icon, primaryRes: CATEGORY_INFO[cat]?.primaryRes };
     if (hasCustomRewards) newAction.customRewards = customRewards;
+    if (daily) newAction.daily = true;
+    if (why) newAction.why = why;
     G.quickActions.push(newAction);
     toast('✓ 追加しました', true);
   }
@@ -3673,6 +3733,154 @@ function deleteQuickAction(id) {
   render();
   toast('削除しました', false);
   openQuickActionListModal(); // 削除後も一覧モーダルに戻る
+}
+
+// ============================================================
+// 週のまとめ（家族に見せる画像）
+// ============================================================
+// 関係性を満たすための機能。見せるのは義務にしない：押したときだけ作り、
+// 催促・通知・「やらなかった日」の強調はしない（見せるのが当番になると回避に寄る）
+
+// offsetWeeks=0で今週、1で先週。月曜始まりの7日分を返す
+function getWeekLogs(offsetWeeks) {
+  const start = new Date(getWeekStartString() + 'T00:00:00');
+  start.setDate(start.getDate() - 7 * offsetWeeks);
+  const today = getLocalDateString(new Date());
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const ds = getLocalDateString(d);
+    let log = [];
+    if (ds === today) log = G.todayLog;
+    else {
+      const h = G.history.find(h => { const hd = getDateForDay(h.day); return hd && getLocalDateString(hd) === ds; });
+      if (h) log = h.log || [];
+    }
+    days.push({ date: d, log, future: ds > today });
+  }
+  return days;
+}
+
+function drawWeeklySummary(days, offsetWeeks) {
+  const W = 1080, H = 1500;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  const font = '-apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif';
+  const css = getComputedStyle(document.documentElement);
+  const catColor = cat => (css.getPropertyValue(getCatColor(cat).slice(4, -1)).trim() || '#888');
+  const all = days.flatMap(d => d.log);
+  const activeDays = days.filter(d => d.log.length > 0).length;
+
+  c.fillStyle = '#faf8f3'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#1a1d27'; c.textBaseline = 'alphabetic';
+  c.font = `bold 60px ${font}`;
+  c.fillText(offsetWeeks === 0 ? '今週のまとめ' : '先週のまとめ', 80, 150);
+  c.font = `36px ${font}`; c.fillStyle = '#6b7080';
+  c.fillText(`${formatDateJP(days[0].date)} 〜 ${formatDateJP(days[6].date)}`, 80, 210);
+
+  // 大きな数字2つ
+  const big = (x, num, unit, label) => {
+    c.fillStyle = '#1a1d27'; c.font = `bold 120px ${font}`; c.fillText(num, x, 380);
+    const w = c.measureText(num).width;
+    c.font = `40px ${font}`; c.fillText(unit, x + w + 12, 380);
+    c.fillStyle = '#6b7080'; c.font = `32px ${font}`; c.fillText(label, x, 430);
+  };
+  big(80, String(activeDays), '日', '記録した日');
+  big(560, String(all.length), '回', '記録した行動');
+
+  // 曜日の丸（やらなかった日は責めない色で）
+  const wd = ['月', '火', '水', '木', '金', '土', '日'];
+  days.forEach((d, i) => {
+    const x = 80 + 60 + i * 140, y = 560;
+    c.beginPath(); c.arc(x, y, 52, 0, Math.PI * 2);
+    if (d.log.length > 0) { c.fillStyle = '#22c55e'; c.fill(); }
+    else { c.fillStyle = d.future ? '#faf8f3' : '#ecebe6'; c.fill(); c.strokeStyle = '#d6d4cc'; c.lineWidth = 3; c.stroke(); }
+    c.textAlign = 'center';
+    c.fillStyle = d.log.length > 0 ? '#ffffff' : '#9a9a9a';
+    c.font = `bold 40px ${font}`; c.fillText(d.log.length > 0 ? String(d.log.length) : '', x, y + 14);
+    c.fillStyle = '#6b7080'; c.font = `30px ${font}`; c.fillText(wd[i], x, y + 100);
+    c.textAlign = 'left';
+  });
+
+  // カテゴリ別
+  const catCount = {};
+  all.forEach(e => { catCount[e.cat] = (catCount[e.cat] || 0) + 1; });
+  const cats = Object.entries(catCount).sort((a, b) => b[1] - a[1]);
+  const max = cats.length ? cats[0][1] : 1;
+  let y = 760;
+  c.fillStyle = '#1a1d27'; c.font = `bold 40px ${font}`; c.fillText('やったこと', 80, y); y += 30;
+  if (cats.length === 0) { c.fillStyle = '#9a9a9a'; c.font = `34px ${font}`; c.fillText('まだ記録がありません', 80, y + 50); }
+  cats.slice(0, 6).forEach(([cat, n]) => {
+    const ci = CATEGORY_INFO[cat] || { icon: '・', label: cat };
+    y += 62;
+    c.fillStyle = '#1a1d27'; c.font = `34px ${font}`; c.fillText(`${ci.icon} ${ci.label}`, 80, y);
+    c.fillStyle = catColor(cat);
+    const bw = Math.max(12, 520 * n / max);
+    c.fillRect(340, y - 30, bw, 36);
+    c.fillStyle = '#1a1d27'; c.fillText(String(n), 340 + bw + 16, y);
+  });
+
+  // よくやった項目
+  const textCount = {};
+  all.forEach(e => { textCount[e.text] = (textCount[e.text] || 0) + 1; });
+  const top = Object.entries(textCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  if (top.length) {
+    y += 110;
+    c.fillStyle = '#1a1d27'; c.font = `bold 40px ${font}`; c.fillText('よくやったこと', 80, y);
+    c.font = `34px ${font}`;
+    top.forEach(([t, n], i) => { c.fillText(`${t.slice(0, 16)} ×${n}`, 80, y + 56 + i * 52); });
+    y += 56 + (top.length - 1) * 52;
+  }
+  // 中身の高さで切り詰める（記録が少ない週に下が空かないように）
+  const outH = Math.min(H, y + 120);
+  const out = document.createElement('canvas');
+  out.width = W; out.height = outH;
+  const o = out.getContext('2d');
+  o.drawImage(cv, 0, 0);
+  o.fillStyle = '#b0aea6'; o.font = `26px ${font}`; o.textAlign = 'right';
+  o.fillText('Daily Life Forge', W - 60, outH - 40);
+  return out;
+}
+
+let weeklySummaryCanvas = null;
+
+function openWeeklySummary(offsetWeeks) {
+  const days = getWeekLogs(offsetWeeks);
+  weeklySummaryCanvas = drawWeeklySummary(days, offsetWeeks);
+  const root = document.getElementById('weekly-summary-root');
+  root.innerHTML = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeWeeklySummary()">
+      <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
+        <div class="modal-handle"></div>
+        <div class="modal-title">${offsetWeeks === 0 ? '今週' : '先週'}のまとめ</div>
+        <img src="${weeklySummaryCanvas.toDataURL('image/png')}" alt="週のまとめ" style="width:100%;border-radius:var(--radius);margin-bottom:10px">
+        <button class="modal-btn primary" onclick="shareWeeklySummary()">画像を保存・共有</button>
+        <button class="modal-btn" onclick="openWeeklySummary(${offsetWeeks === 0 ? 1 : 0})">${offsetWeeks === 0 ? '先週' : '今週'}を見る</button>
+        <button class="modal-btn" onclick="closeWeeklySummary()">閉じる</button>
+      </div>
+    </div>`;
+}
+
+function closeWeeklySummary() {
+  document.getElementById('weekly-summary-root').innerHTML = '';
+}
+
+function shareWeeklySummary() {
+  if (!weeklySummaryCanvas) return;
+  weeklySummaryCanvas.toBlob(async blob => {
+    const file = new File([blob], `weekly-${getLocalDateString(new Date())}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); } catch (e) { /* 共有シートを閉じただけ */ }
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
 }
 
 // ============================================================
